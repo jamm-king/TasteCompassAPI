@@ -39,4 +39,4 @@ out/
 ### Kotlin ###
 .kotlin
 
-src/main/resources/openai.properties
+**/openai.properties
