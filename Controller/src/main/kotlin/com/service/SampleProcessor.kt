@@ -1,7 +1,7 @@
 package com.service
 
-import com.entity.SampleData
-import com.service.repository.SampleRepository
+import com.entity.Restaurant
+import com.service.repository.RestaurantRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
@@ -10,6 +10,8 @@ import java.util.logging.Logger
 
 class SampleProcessor : Processor {
     private var scope: CoroutineScope? = null
+    private val repository = RestaurantRepository()
+
     override fun start(parentScope: CoroutineScope) {
         logger.info("start")
 
@@ -22,9 +24,26 @@ class SampleProcessor : Processor {
 
         parentScope.launch {
             scope?.launch {
-                val getData = fetchData(SampleRepository())
+                logger.info("Start pipeline")
+                val getData = fetchData(repository)
                 val analyzeData = analyze(getData)
                 store(analyzeData)
+
+                // Check DB data for debugging
+                repository.getAll().also {
+                    logger.info("Total DB count : ${it.size}")
+                    it.forEach { restaurant ->
+                        logger.info(restaurant.toReadableString())
+                    }
+                }
+
+                // Insert test
+                scope?.launch {
+                    (0  until 5).forEach {
+                        delay(3000) // 3 seconds
+                        repository.insert() // insert dummy data
+                    }
+                }
             } ?: logger.warning("scope is null")
         }
     }
@@ -34,20 +53,22 @@ class SampleProcessor : Processor {
         scope?.cancel()
     }
 
-    private fun CoroutineScope.fetchData(repository: SampleRepository): ReceiveChannel<SampleData> = produce {
+    private fun CoroutineScope.fetchData(repository: RestaurantRepository): ReceiveChannel<Restaurant> = produce {
         repository.getAsFlow().collect {
-            logger.info("collect data - ${it.sample}")
+            logger.info("collect data - ${it.name}")
             send(it)
         }
     }
 
-    private fun CoroutineScope.analyze(channel: ReceiveChannel<SampleData>) = produce {
+    private fun CoroutineScope.analyze(channel: ReceiveChannel<Restaurant>) = produce {
         channel.consumeEach { sample ->
-            logger.info("analyzing [${sample.sample}]")
+            logger.info("analyzing [${sample.name}]")
             scope?.run {
-                val result = DefaultAnalyzer(this).analyze(sample.sample)
-                logger.info("process pipeline done! [${sample.sample}] $result")
-                send(sample.sample)
+                val result = DefaultAnalyzer(this).analyze(sample.name ?: "")
+                logger.info("process pipeline done! [${sample.name}] $result")
+                sample.name?.run {
+                    send(this)
+                }
             }
         }
     }
@@ -56,7 +77,7 @@ class SampleProcessor : Processor {
         channel.consumeEach { result ->
             logger.info("storing [${result}]")
             scope?.run {
-                SampleRepository().insert()
+                RestaurantRepository().insert()
             }
         }
     }
