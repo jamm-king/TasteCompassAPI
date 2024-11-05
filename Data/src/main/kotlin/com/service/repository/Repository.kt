@@ -1,12 +1,12 @@
 package com.service.repository
 
-import com.entity.SampleData
 import kotlinx.coroutines.flow.Flow
 
-interface Repository {
-    fun insert()
+interface Repository<Entity> {
+    fun insert(entity: Entity)
     fun delete()
     fun update()
-    fun getAll(): List<SampleData>
-    fun getAsFlow() : Flow<SampleData>
+    fun upsert(entity: Entity)
+    fun getAll(): List<Entity>
+    fun getAsFlow() : Flow<Entity>
 }
