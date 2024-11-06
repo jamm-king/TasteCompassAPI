@@ -36,20 +36,61 @@ class SampleProcessor : Processor {
                         logger.info(restaurant.toReadableString())
                     }
                 }
+                delay(5000)
+
+                // Delete test
+                scope?.launch {
+                    val ids = listOf(0L, 1L, 2L, 3L, 4L)
+                    repository.delete(ids)
+                    logger.info("deleted records of id 0, 1, 2, 3, 4")
+                }
+                delay(5000)
+
+                // Check DB data for debugging
+                repository.getAll().also {
+                    logger.info("Total DB count : ${it.size}")
+                    it.forEach { restaurant ->
+                        logger.info(restaurant.toReadableString())
+                    }
+                }
+                delay(5000)
 
                 // Insert test
                 scope?.launch {
                     (0 until 5).forEach {
-                        delay(3000) // 3 seconds
+                        delay(1000)
                         val data = Restaurant(
                             id = it.toLong(),
                             name = "Sample Restaurant $it",
                             mood = System.currentTimeMillis().toString(),
-                            moodVector = List(1536) { 0.0f },
-                            minPrice = 10.0f,
-                            maxPrice = 20.0f
+                            moodVector = List(1536) { 1.0f },
+                            minPrice = 10000.0f * it,
+                            maxPrice = 20000.0f * it
                         )
-                        repository.insert(data)
+                        repository.insert(listOf(data))
+                    }
+                }
+                delay(12000)
+
+                // Check DB data for debugging
+                repository.getAll().also {
+                    logger.info("Total DB count : ${it.size}")
+                    it.forEach { restaurant ->
+                        logger.info(restaurant.toReadableString())
+                    }
+                }
+                delay(5000)
+
+                // Search test
+                scope?.launch {
+                    val moodVector = List(1536) {  1.0f }
+                    val searchResults = repository.search(listOf(moodVector), 7)
+                    for (i in searchResults.indices) {
+                        logger.info("search result #$i")
+                        val searchResult = searchResults[i]
+                        searchResult.forEach { restaurant ->
+                            logger.info(restaurant.toReadableString())
+                        }
                     }
                 }
             } ?: logger.warning("scope is null")
@@ -72,7 +113,7 @@ class SampleProcessor : Processor {
         channel.consumeEach { sample ->
             logger.info("analyzing [${sample.name}]")
             scope?.run {
-                val result = DefaultAnalyzer(this).analyze(sample.mood ?: "")
+                val result = DefaultAnalyzer(this).analyze(sample.name ?: "")
                 sample.mood = result
                 logger.info("process pipeline done! [${sample.name}] $result")
                 sample.mood?.run {
@@ -86,7 +127,7 @@ class SampleProcessor : Processor {
         channel.consumeEach { result ->
             logger.info("storing [${result.name}]")
             scope?.run {
-                repository.upsert(result)
+                repository.upsert(listOf(result))
             }
         }
     }

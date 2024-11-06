@@ -2,10 +2,8 @@ package com.service.repository
 
 import com.entity.Restaurant
 import com.config.MilvusConfig
-import com.google.gson.JsonArray
-import io.milvus.v2.service.vector.request.InsertReq
-import io.milvus.v2.service.vector.request.QueryReq
-import io.milvus.v2.service.vector.request.UpsertReq
+import io.milvus.v2.service.vector.request.*
+import io.milvus.v2.service.vector.request.data.FloatVec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -14,46 +12,74 @@ import kotlinx.coroutines.launch
 import java.util.logging.Logger
 
 class RestaurantRepository : Repository<Restaurant> {
-    override fun insert(entity: Restaurant) {
+    override fun insert(entities: List<Restaurant>) {
         CoroutineScope(Dispatchers.IO).launch {
-            val jsonObject = entity.toJsonObject()
-            val collectionName = jsonObject.get("collectionName").asString
-            val data = jsonObject.get("data").asJsonArray
-            val dataList = data.map { it.asJsonObject }
-
+            val dataList = entities.map { it.toJsonObject() }
             val insertReq = InsertReq.builder()
-                .collectionName(collectionName)
+                .collectionName(COLLECTION_NAME)
                 .data(dataList)
                 .build()
 
             milvusClient.insert(insertReq)
-            updatedRestaurant.emit(entity)
+            entities.map { updatedRestaurant.emit(it) }
         }
     }
+    override fun upsert(entities: List<Restaurant>) {
+        val dataList = entities.map { it.toJsonObject() }
+        val upsertReq = UpsertReq.builder()
+            .collectionName(COLLECTION_NAME)
+            .data(dataList)
+            .build()
 
-    override fun delete() {
-        TODO("Not yet implemented")
+        milvusClient.upsert(upsertReq)
     }
 
-    override fun update() {
-        TODO("Not yet implemented")
+    override fun delete(ids: List<Long>) {
+        val deleteReq = DeleteReq.builder()
+            .collectionName(COLLECTION_NAME)
+            .ids(ids)
+            .build()
+
+        milvusClient.delete(deleteReq)
     }
 
-    override fun upsert(entity: Restaurant) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val jsonObject = entity.toJsonObject()
-            val collectionName = jsonObject.get("collectionName").asString
-            val data = jsonObject.get("data").asJsonArray
-            val dataList = data.map { it.asJsonObject }
+    override fun search(data: List<List<Float>>, topK: Int): List<List<Restaurant>> {
+        val vectorData = data.map { FloatVec(it) }
+        val searchReq = SearchReq.builder()
+            .collectionName(COLLECTION_NAME)
+            .data(vectorData)
+            .topK(topK)
+            .outputFields(listOf("id", "name", "min_price", "max_price", "reviews", "mood"))
+            .build()
 
-            val upsertReq = UpsertReq.builder()
-                .collectionName(collectionName)
-                .data(dataList)
-                .build()
-
-            milvusClient.upsert(upsertReq)
-            updatedRestaurant.emit(entity)
+        val searchResp = milvusClient.search(searchReq)
+        val ret = mutableListOf<MutableList<Restaurant>>()
+        searchResp.searchResults.forEach { results ->
+            val topKResults = mutableListOf<Restaurant>()
+            results.forEach { result ->
+                val restaurant = Restaurant.fromMap(result.entity)
+                logger.info(restaurant.toReadableString())
+                topKResults.add(Restaurant.fromMap(result.entity))
+            }
+            ret.add(topKResults)
         }
+
+        return ret
+    }
+
+    override fun get(ids: List<Long>): List<Restaurant> {
+        val getReq = GetReq.builder()
+            .collectionName(COLLECTION_NAME)
+            .ids(ids)
+            .build()
+
+        val getResp = milvusClient.get(getReq)
+        val ret = mutableListOf<Restaurant>()
+        getResp.getResults.forEach { getResult ->
+            ret.add(Restaurant.fromMap(getResult.entity))
+        }
+
+        return ret
     }
 
     override fun getAll(): List<Restaurant> {
@@ -63,12 +89,12 @@ class RestaurantRepository : Repository<Restaurant> {
             .build()
 
         val queryResp = milvusClient.query(queryReq)
-        val result = mutableListOf<Restaurant>()
+        val ret = mutableListOf<Restaurant>()
         queryResp.queryResults.forEach { queryResult ->
-            result.add(Restaurant.fromMap(queryResult.entity))
+            ret.add(Restaurant.fromMap(queryResult.entity))
         }
 
-        return result
+        return ret
     }
 
     override fun getAsFlow(): Flow<Restaurant> {

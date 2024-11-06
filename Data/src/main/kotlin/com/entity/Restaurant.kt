@@ -19,22 +19,15 @@ data class Restaurant(
 
     fun toJsonObject(): JsonObject {
         val jsonObject = JsonObject().apply {
-            addProperty("collectionName", "Restaurant")
-
-            val dataArray = JsonArray()
-            val dataObject = JsonObject().apply {
-                add("mood_vector", JsonArray().apply {
-                    (moodVector ?: List(1536) { 0.0f }).forEach { add(it) }
-                })
-                addProperty("id", id)
-                addProperty("name", name ?: "N/A")
-                addProperty("min_price", minPrice ?: -1f)
-                addProperty("max_price", maxPrice ?: -1f)
-                add("reviews", JsonArray())
-                addProperty("mood", mood ?: "N/A")
-            }
-            dataArray.add(dataObject)
-            add("data", dataArray)
+            add("mood_vector", JsonArray().apply {
+                (moodVector ?: List(1536) { 0.0f }).forEach { add(it) }
+            })
+            addProperty("id", id)
+            addProperty("name", name ?: "N/A")
+            addProperty("min_price", minPrice ?: -1f)
+            addProperty("max_price", maxPrice ?: -1f)
+            add("reviews", JsonArray())
+            addProperty("mood", mood ?: "N/A")
         }
 
         return jsonObject
