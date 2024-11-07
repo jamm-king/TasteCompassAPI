@@ -10,9 +10,10 @@ class MainController : Controller{
         if(!processScope.isActive) {
             processScope = CoroutineScope(Job() + Dispatchers.Default)
         }
+
         processScope.launch {
             sampleProcessor.start(processScope)
-            delay(60 * 1000)
+            delay(60 * 1000 * 30) // stop after 30 min
             sampleProcessor.stop()
         }
     }
