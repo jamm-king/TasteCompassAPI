@@ -22,6 +22,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://repo.spring.io/release") }
     maven { url = uri("https://repo.spring.io/snapshot") }
     maven { url = uri("https://repo.spring.io/milestone") }
 }
@@ -32,7 +33,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.springframework.ai:spring-ai-milvus-store-spring-boot-starter")
     implementation("org.springframework.ai:spring-ai-openai-spring-boot-starter")
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
