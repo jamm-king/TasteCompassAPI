@@ -1,5 +1,7 @@
 package com.entity
 
+import com.common.Constants
+
 enum class RestaurantProperty(
     val key: String,
     val defaultValue: Any
@@ -10,7 +12,7 @@ enum class RestaurantProperty(
     MAX_PRICE("max_price", -1f),
     REVIEWS("reviews", listOf<String>()),
     MOOD("mood", "N/A"),
-    MOOD_VECTOR("mood_vector",  List(1536) { 0.0f });
+    MOOD_VECTOR("mood_vector",  List(Constants.EMBEDDING_SIZE) { 0.0f });
 
     companion object {
         fun getKeys(): List<String> {

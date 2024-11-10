@@ -1,5 +1,6 @@
 package com.service
 
+import com.common.Constants
 import com.entity.Restaurant
 import com.service.repository.RestaurantRepository
 import kotlinx.coroutines.*
@@ -86,7 +87,7 @@ class SampleProcessor(
 
                 // Search test
                 scope?.launch {
-                    val moodVector = List(1536) { 3.0f }
+                    val moodVector = List(Constants.EMBEDDING_SIZE) { 3.0f }
                     val searchResults = repository.search("mood_vector", 7, listOf(moodVector))
                     logger.info("result search for mood_vector [3.0, 3.0, 3.0, ...]")
                     for (i in searchResults.indices) {
