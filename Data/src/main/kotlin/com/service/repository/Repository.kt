@@ -1,14 +1,13 @@
 package com.service.repository
 
-import io.milvus.v2.service.vector.request.data.BaseVector
 import kotlinx.coroutines.flow.Flow
 
-interface Repository<Entity> {
-    fun insert(entities: List<Entity>)
-    fun upsert(entities: List<Entity>)
+interface Repository<T> {
+    fun insert(entities: List<T>)
+    fun upsert(entities: List<T>)
     fun delete(ids: List<Long>)
-    fun search(data: List<List<Float>>, topK: Int): List<List<Entity>>
-    fun get(ids: List<Long>): List<Entity>
-    fun getAll(): List<Entity>
-    fun getAsFlow(): Flow<Entity>
+    fun search(fieldName: String, topK: Int, data: List<List<Float>>): List<List<T>>
+    fun get(ids: List<Long>): List<T>
+    fun getAll(): List<T>
+    fun getAsFlow(): Flow<T>
 }

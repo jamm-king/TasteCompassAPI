@@ -6,11 +6,14 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
+import org.springframework.stereotype.Service
 import java.util.logging.Logger
 
-class SampleProcessor : Processor {
+@Service
+class SampleProcessor(
+    private val repository: RestaurantRepository
+) : Processor {
     private var scope: CoroutineScope? = null
-    private val repository = RestaurantRepository()
 
     override fun start(parentScope: CoroutineScope) {
         logger.info("start")
@@ -40,9 +43,9 @@ class SampleProcessor : Processor {
 
                 // Delete test
                 scope?.launch {
-                    val ids = listOf(0L, 1L, 2L, 3L, 4L)
+                    val ids = listOf(1L, 3L)
                     repository.delete(ids)
-                    logger.info("deleted records of id 0, 1, 2, 3, 4")
+                    logger.info("deleted records of id 1, 3")
                 }
                 delay(5000)
 
@@ -57,15 +60,15 @@ class SampleProcessor : Processor {
 
                 // Insert test
                 scope?.launch {
-                    (0 until 5).forEach {
+                    (1 until 6).forEach { idx ->
                         delay(1000)
                         val data = Restaurant(
-                            id = it.toLong(),
-                            name = "Sample Restaurant $it",
+                            id = idx.toLong(),
+                            name = "Sample Restaurant $idx",
                             mood = System.currentTimeMillis().toString(),
-                            moodVector = List(1536) { 1.0f },
-                            minPrice = 10000.0f * it,
-                            maxPrice = 20000.0f * it
+                            moodVector = List(1536) { idx.toFloat() },
+                            minPrice = 10000.0f * idx,
+                            maxPrice = 20000.0f * idx
                         )
                         repository.insert(listOf(data))
                     }
@@ -83,10 +86,10 @@ class SampleProcessor : Processor {
 
                 // Search test
                 scope?.launch {
-                    val moodVector = List(1536) {  1.0f }
-                    val searchResults = repository.search(listOf(moodVector), 7)
+                    val moodVector = List(1536) { 3.0f }
+                    val searchResults = repository.search("mood_vector", 7, listOf(moodVector))
+                    logger.info("result search for mood_vector [3.0, 3.0, 3.0, ...]")
                     for (i in searchResults.indices) {
-                        logger.info("search result #$i")
                         val searchResult = searchResults[i]
                         searchResult.forEach { restaurant ->
                             logger.info(restaurant.toReadableString())

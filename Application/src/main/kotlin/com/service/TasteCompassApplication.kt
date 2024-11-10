@@ -2,15 +2,19 @@ package com.service
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.context.ApplicationContext
+import org.springframework.context.annotation.ComponentScan
 
-@SpringBootApplication()
+@SpringBootApplication
+@ComponentScan(basePackages = ["com.service", "com.config"])
 class TasteCompassApplication
 
 fun main(args: Array<String>) {
-	runApplication<TasteCompassApplication>(*args)
-	startController()
+	val context = runApplication<TasteCompassApplication>(*args)
+	startController(context)
 }
 
-private fun startController() {
-	MainController().start()
+private fun startController(context: ApplicationContext) {
+	val mainController = context.getBean(MainController::class.java)
+	mainController.start()
 }

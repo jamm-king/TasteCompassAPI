@@ -1,9 +1,11 @@
 package com.service.repository
 
 import com.entity.Restaurant
-import com.config.MilvusConfig
+import com.entity.RestaurantProperty
+import io.milvus.v2.client.MilvusClientV2
 import io.milvus.v2.service.vector.request.*
 import io.milvus.v2.service.vector.request.data.FloatVec
+import org.springframework.stereotype.Repository as SpringRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -11,7 +13,13 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import java.util.logging.Logger
 
-class RestaurantRepository : Repository<Restaurant> {
+@SpringRepository
+class RestaurantRepository(
+    private val milvusClient: MilvusClientV2
+) : Repository<Restaurant> {
+    private val logger: Logger = Logger.getLogger(TAG)
+    private val updatedRestaurant: MutableSharedFlow<Restaurant> = MutableSharedFlow()
+
     override fun insert(entities: List<Restaurant>) {
         CoroutineScope(Dispatchers.IO).launch {
             val dataList = entities.map { it.toJsonObject() }
@@ -24,6 +32,7 @@ class RestaurantRepository : Repository<Restaurant> {
             entities.map { updatedRestaurant.emit(it) }
         }
     }
+
     override fun upsert(entities: List<Restaurant>) {
         val dataList = entities.map { it.toJsonObject() }
         val upsertReq = UpsertReq.builder()
@@ -43,13 +52,14 @@ class RestaurantRepository : Repository<Restaurant> {
         milvusClient.delete(deleteReq)
     }
 
-    override fun search(data: List<List<Float>>, topK: Int): List<List<Restaurant>> {
+    override fun search(fieldName: String, topK: Int, data: List<List<Float>>): List<List<Restaurant>> {
         val vectorData = data.map { FloatVec(it) }
         val searchReq = SearchReq.builder()
             .collectionName(COLLECTION_NAME)
+            .annsField(fieldName)
             .data(vectorData)
             .topK(topK)
-            .outputFields(listOf("id", "name", "min_price", "max_price", "reviews", "mood"))
+            .outputFields(RestaurantProperty.getKeys())
             .build()
 
         val searchResp = milvusClient.search(searchReq)
@@ -104,8 +114,5 @@ class RestaurantRepository : Repository<Restaurant> {
     companion object {
         private const val COLLECTION_NAME = "Restaurant"
         private const val TAG = "RestaurantRepository"
-        private val logger = Logger.getLogger(TAG)
-        private val milvusClient = MilvusConfig().milvusClient()
-        private val updatedRestaurant: MutableSharedFlow<Restaurant> = MutableSharedFlow()
     }
 }

@@ -1,11 +1,15 @@
 package com.service
 
 import kotlinx.coroutines.*
+import org.springframework.stereotype.Service
 import java.util.logging.Logger
 
-class MainController : Controller{
+@Service
+class MainController(
+    private val sampleProcessor: SampleProcessor
+) : Controller{
     private var processScope = CoroutineScope(Job() + Dispatchers.Default)
-    private val sampleProcessor = SampleProcessor()
+
     override fun start() {
         if(!processScope.isActive) {
             processScope = CoroutineScope(Job() + Dispatchers.Default)
