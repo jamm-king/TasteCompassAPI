@@ -10,7 +10,7 @@ import java.util.logging.Logger
 @Repository
 class RestaurantEmbeddingRepository(
     private val milvusClient: MilvusClientV2
-): EmbeddingRepository<RestaurantEmbedding> {
+): MilvusRepository<RestaurantEmbedding> {
 
     private val logger: Logger = Logger.getLogger(TAG)
 

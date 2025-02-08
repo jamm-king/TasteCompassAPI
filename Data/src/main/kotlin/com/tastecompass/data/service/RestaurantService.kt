@@ -4,8 +4,8 @@ import com.tastecompass.data.common.AnalyzeStep
 import com.tastecompass.data.entity.Restaurant
 import com.tastecompass.data.entity.RestaurantEmbedding
 import com.tastecompass.data.entity.RestaurantMetadata
-import com.tastecompass.data.repository.milvus.EmbeddingRepository
-import com.tastecompass.data.repository.mongo.MetadataRepository
+import com.tastecompass.data.repository.milvus.MilvusRepository
+import com.tastecompass.data.repository.mongo.MongoRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -16,16 +16,16 @@ import java.util.logging.Logger
 
 @Service
 class RestaurantService(
-    private val metadataRepository: MetadataRepository<RestaurantMetadata>,
-    private val embeddingRepository: EmbeddingRepository<RestaurantEmbedding>
+    private val mongoRepository: MongoRepository<RestaurantMetadata>,
+    private val milvusRepository: MilvusRepository<RestaurantEmbedding>
 ) : DataStorageService<Restaurant> {
 
     private val logger = Logger.getLogger(TAG)
     private val updatedRestaurant: MutableSharedFlow<Restaurant> = MutableSharedFlow()
     override fun search(fieldName: String, topK: Int, vector: List<Float>): List<Restaurant> {
-        val embeddingList = embeddingRepository.search(fieldName, topK, listOf(vector)).first()
+        val embeddingList = milvusRepository.search(fieldName, topK, listOf(vector)).first()
         val idList = embeddingList.map{ it.id }
-        val metadataList = metadataRepository.get(idList)
+        val metadataList = mongoRepository.get(idList)
         val embeddingMap = embeddingList.associateBy { it.id }
         return metadataList.map { metadata ->
             val embedding = embeddingMap[metadata.id]
@@ -79,7 +79,7 @@ class RestaurantService(
     }
 
     override fun upsert(entityList: List<Restaurant>) {
-        val existingIds = metadataRepository.get(entityList.map { it.id }).map { it.id }.toSet()
+        val existingIds = mongoRepository.get(entityList.map { it.id }).map { it.id }.toSet()
         val toInsert = entityList.filter { it.id !in existingIds }
         val toUpdate = entityList.filter { it.id in existingIds }
 
@@ -96,8 +96,8 @@ class RestaurantService(
     }
 
     override fun delete(idList: List<String>) {
-        metadataRepository.delete(idList)
-        embeddingRepository.delete(idList)
+        mongoRepository.delete(idList)
+        milvusRepository.delete(idList)
     }
 
     override fun get(id: String): Restaurant? {
@@ -105,8 +105,8 @@ class RestaurantService(
     }
 
     override fun get(idList: List<String>): List<Restaurant> {
-        val metadataList = metadataRepository.get(idList)
-        val embeddingList = embeddingRepository.get(idList)
+        val metadataList = mongoRepository.get(idList)
+        val embeddingList = milvusRepository.get(idList)
         val embeddingMap = embeddingList.associateBy { it.id }
         return metadataList.map { metadata ->
             val embedding = embeddingMap[metadata.id]
@@ -115,8 +115,8 @@ class RestaurantService(
     }
 
     override fun getAll(): List<Restaurant> {
-        val metadataList = metadataRepository.getAll()
-        val embeddingList = embeddingRepository.getAll()
+        val metadataList = mongoRepository.getAll()
+        val embeddingList = milvusRepository.getAll()
         val embeddingMap = embeddingList.associateBy { it.id }
         return metadataList.map { metadata ->
             val embedding = embeddingMap[metadata.id]
@@ -129,7 +129,7 @@ class RestaurantService(
     private fun handlePreparedEntities(preparedEntities: List<Restaurant>) {
         try {
             val metadataList = preparedEntities.map { it.metadata }
-            metadataRepository.insert(metadataList)
+            mongoRepository.insert(metadataList)
             preparedEntities.forEach { restaurant ->
                 CoroutineScope(Dispatchers.IO).launch {
                     updatedRestaurant.emit(restaurant)
@@ -143,7 +143,7 @@ class RestaurantService(
     private fun handleAnalyzedEntities(analyzedEntities: List<Restaurant>) {
         try {
             val metadataList = analyzedEntities.map { it.metadata }
-            metadataRepository.update(metadataList)
+            mongoRepository.update(metadataList)
             analyzedEntities.forEach { restaurant ->
                 CoroutineScope(Dispatchers.IO).launch {
                     updatedRestaurant.emit(restaurant)
@@ -157,8 +157,8 @@ class RestaurantService(
         try {
             val metadataList = embeddedEntities.map { it.metadata }
             val embeddingList = embeddedEntities.map { it.embedding ?: throw Exception("Restaurant id ${it.id} has no embedding") }
-            metadataRepository.update(metadataList)
-            embeddingRepository.insert(embeddingList)
+            mongoRepository.update(metadataList)
+            milvusRepository.insert(embeddingList)
             embeddedEntities.forEach { restaurant ->
                 CoroutineScope(Dispatchers.IO).launch {
                     updatedRestaurant.emit(restaurant)

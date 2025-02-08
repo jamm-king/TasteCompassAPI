@@ -2,8 +2,8 @@ package com.tastecompass.data.service
 
 import com.tastecompass.data.common.AnalyzeStep
 import com.tastecompass.data.entity.*
-import com.tastecompass.data.repository.milvus.EmbeddingRepository
-import com.tastecompass.data.repository.mongo.MetadataRepository
+import com.tastecompass.data.repository.milvus.MilvusRepository
+import com.tastecompass.data.repository.mongo.MongoRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -17,9 +17,9 @@ import kotlin.test.assertEquals
 class RestaurantServiceMockTest {
 
     @Mock
-    private lateinit var metadataRepository: MetadataRepository<RestaurantMetadata>
+    private lateinit var mongoRepository: MongoRepository<RestaurantMetadata>
     @Mock
-    private lateinit var embeddingRepository: EmbeddingRepository<RestaurantEmbedding>
+    private lateinit var milvusRepository: MilvusRepository<RestaurantEmbedding>
     @InjectMocks
     private lateinit var restaurantService: RestaurantService
 
@@ -35,17 +35,17 @@ class RestaurantServiceMockTest {
         val mockEmbedding = embeddingSample.data()[0]
         val mockMetadata = metadataSample.data()[0]
 
-        `when`(embeddingRepository.search(fieldName, topK, vectorList))
+        `when`(milvusRepository.search(fieldName, topK, vectorList))
             .thenReturn(listOf(listOf(mockEmbedding)))
-        `when`(metadataRepository.get(listOf("1")))
+        `when`(mongoRepository.get(listOf("1")))
             .thenReturn(listOf(mockMetadata))
 
         val result = restaurantService.search(fieldName, topK, vector)
 
         assertEquals(1, result.size)
         assertEquals("Restaurant A", result[0].name)
-        verify(embeddingRepository).search(fieldName, topK, vectorList)
-        verify(metadataRepository).get(listOf("1"))
+        verify(milvusRepository).search(fieldName, topK, vectorList)
+        verify(mongoRepository).get(listOf("1"))
     }
 
     @Test
@@ -58,8 +58,8 @@ class RestaurantServiceMockTest {
 
         restaurantService.insert(listOf(preparedRestaurant))
 
-        verify(metadataRepository).insert(listOf(metadata))
-        verifyNoInteractions(embeddingRepository)
+        verify(mongoRepository).insert(listOf(metadata))
+        verifyNoInteractions(milvusRepository)
     }
 
     @Test
@@ -80,9 +80,9 @@ class RestaurantServiceMockTest {
 
         restaurantService.update(listOf(analyzedRestaurant, embeddedRestaurant))
 
-        verify(metadataRepository).update(listOf(analyzedMetadata))
-        verify(metadataRepository).update(listOf(embeddedMetadata))
-        verify(embeddingRepository).insert(listOf(embedding))
+        verify(mongoRepository).update(listOf(analyzedMetadata))
+        verify(mongoRepository).update(listOf(embeddedMetadata))
+        verify(milvusRepository).insert(listOf(embedding))
     }
 
     @Test
@@ -103,13 +103,13 @@ class RestaurantServiceMockTest {
         `when`(existingRestaurant.embedding).thenReturn(existingEmbedding)
         `when`(existingRestaurant.status).thenReturn(AnalyzeStep.EMBEDDED)
 
-        `when`(metadataRepository.get(listOf("1", "2"))).thenReturn(listOf(existingMetadata))
+        `when`(mongoRepository.get(listOf("1", "2"))).thenReturn(listOf(existingMetadata))
 
         restaurantService.upsert(listOf(newRestaurant, existingRestaurant))
 
-        verify(metadataRepository).insert(listOf(newMetadata))
-        verify(metadataRepository).update(listOf(existingMetadata))
-        verify(embeddingRepository).insert(listOf(existingEmbedding))
+        verify(mongoRepository).insert(listOf(newMetadata))
+        verify(mongoRepository).update(listOf(existingMetadata))
+        verify(milvusRepository).insert(listOf(existingEmbedding))
     }
 
     @Test
@@ -118,8 +118,8 @@ class RestaurantServiceMockTest {
 
         restaurantService.delete(idList)
 
-        verify(metadataRepository).delete(idList)
-        verify(embeddingRepository).delete(idList)
+        verify(mongoRepository).delete(idList)
+        verify(milvusRepository).delete(idList)
     }
 
     @Test
@@ -128,8 +128,8 @@ class RestaurantServiceMockTest {
         val metadata = RestaurantMetadata("1", AnalyzeStep.EMBEDDED, name = "Restaurant A")
         val embedding = RestaurantEmbedding("1", tasteVector = listOf(0.1f, 0.2f))
 
-        `when`(metadataRepository.get(idList)).thenReturn(listOf(metadata))
-        `when`(embeddingRepository.get(idList)).thenReturn(listOf(embedding))
+        `when`(mongoRepository.get(idList)).thenReturn(listOf(metadata))
+        `when`(milvusRepository.get(idList)).thenReturn(listOf(embedding))
 
         val result = restaurantService.get(idList)
 
@@ -143,8 +143,8 @@ class RestaurantServiceMockTest {
         val metadata = RestaurantMetadata("1", AnalyzeStep.EMBEDDED, name = "Restaurant A")
         val embedding = RestaurantEmbedding("1", tasteVector = listOf(0.1f, 0.2f))
 
-        `when`(metadataRepository.getAll()).thenReturn(listOf(metadata))
-        `when`(embeddingRepository.getAll()).thenReturn(listOf(embedding))
+        `when`(mongoRepository.getAll()).thenReturn(listOf(metadata))
+        `when`(milvusRepository.getAll()).thenReturn(listOf(embedding))
 
         val result = restaurantService.getAll()
 

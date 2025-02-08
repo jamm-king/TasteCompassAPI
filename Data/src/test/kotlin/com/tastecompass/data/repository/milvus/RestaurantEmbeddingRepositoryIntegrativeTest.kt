@@ -2,7 +2,6 @@ package com.tastecompass.data.repository.milvus
 
 import com.tastecompass.data.common.Constants
 import com.tastecompass.data.config.MilvusConfig
-import com.tastecompass.data.entity.RestaurantEmbedding
 import com.tastecompass.data.entity.RestaurantEmbeddingSample
 import io.milvus.v2.client.MilvusClientV2
 import org.junit.jupiter.api.AfterEach

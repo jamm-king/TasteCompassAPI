@@ -1,6 +1,6 @@
 package com.tastecompass.data.repository.mongo
 
-interface MetadataRepository<T> {
+interface MongoRepository<T> {
     fun insert(entityList: List<T>)
     fun update(entityList: List<T>)
     fun delete(idList: List<String>)

@@ -1,6 +1,6 @@
 package com.tastecompass.data.repository.milvus
 
-interface EmbeddingRepository<T> {
+interface MilvusRepository<T> {
     fun search(fieldName: String, topK: Int, vectorList: List<List<Float>>): List<List<T>>
     fun insert(entityList: List<T>)
     fun upsert(entityList: List<T>)

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository
 @Repository
 class RestaurantMetadataRepository(
     private val mongoClient: MongoClient
-): MetadataRepository<RestaurantMetadata> {
+): MongoRepository<RestaurantMetadata> {
 
     private val database = mongoClient.getDatabase(DATABASE_NAME)
     private val collection = database.getCollection<Document>(COLLECTION_NAME)
