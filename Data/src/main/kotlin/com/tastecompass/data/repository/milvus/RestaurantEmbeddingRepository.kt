@@ -1,87 +1,337 @@
 package com.tastecompass.data.repository.milvus
 
 import com.tastecompass.data.entity.RestaurantEmbedding
+import com.tastecompass.data.exception.DataAccessException
+import com.tastecompass.data.exception.EntityNotFoundException
+import com.tastecompass.data.exception.InvalidRequestException
 import io.milvus.v2.client.MilvusClientV2
+import io.milvus.v2.exception.MilvusClientException
 import io.milvus.v2.service.vector.request.*
 import io.milvus.v2.service.vector.request.data.FloatVec
+import kotlinx.coroutines.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
-import java.util.logging.Logger
 
 @Repository
 class RestaurantEmbeddingRepository(
     private val milvusClient: MilvusClientV2
 ): MilvusRepository<RestaurantEmbedding> {
 
-    private val logger: Logger = Logger.getLogger(TAG)
+    private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
-    override fun search(fieldName: String, topK: Int, vectorList: List<List<Float>>): List<List<RestaurantEmbedding>> {
-        val vectorData = vectorList.map { FloatVec(it) }
+    override suspend fun search(
+        fieldName: String,
+        topK: Int,
+        vector: List<Float>,
+    ): List<RestaurantEmbedding> = coroutineScope {
+        val vectorData = listOf(FloatVec(vector))
         val searchReq = SearchReq.builder()
             .collectionName(COLLECTION_NAME).annsField(fieldName)
             .data(vectorData).topK(topK).outputFields(OUTPUT_FIELDS).build()
 
-        val searchResp = milvusClient.search(searchReq)
-        val ret = mutableListOf<MutableList<RestaurantEmbedding>>()
-        searchResp.searchResults.forEach { results ->
-            val topKResults = mutableListOf<RestaurantEmbedding>()
-            results.forEach { result ->
-                val restaurantEmbedding = RestaurantEmbedding.fromMap(result.entity)
-                topKResults.add(restaurantEmbedding)
+        val entityListDeferred = async {
+            try {
+                val searchResp = milvusClient.search(searchReq)
+                val searchResult = searchResp.searchResults.first()
+                val entityList = searchResult.map { RestaurantEmbedding.fromMap(it.entity) }
+                logger.debug("Searched restaurant embedding (field: $fieldName, topK: $topK)")
+
+                entityList
+            } catch (e: MilvusClientException) {
+                logger.error("Failed to search restaurant embedding (filed: $fieldName, topK: $topK): ${e.message}")
+
+                throw DataAccessException.milvusAccessUnavailable()
             }
-            ret.add(topKResults)
         }
 
-        return ret
+        entityListDeferred.await()
     }
 
-    override fun insert(entityList: List<RestaurantEmbedding>) {
-        val dataList = entityList.map { it.toJsonObject() }
+    override suspend fun insert(
+        entity: RestaurantEmbedding
+    ): Unit = coroutineScope {
+        val existingIdList = existingIds(listOf(entity.id))
+        if(entity.id in existingIdList)
+            throw InvalidRequestException.duplicateKey(entity)
+
+        val dataList = listOf(entity.toJsonObject())
         val insertReq = InsertReq.builder()
-            .collectionName(COLLECTION_NAME).data(dataList).build()
+            .collectionName(COLLECTION_NAME)
+            .data(dataList)
+            .build()
 
-        milvusClient.insert(insertReq)
-    }
+        val insertRespDeferred = async {
+            try {
+                val insertResp = milvusClient.insert(insertReq)
+                if (insertResp.insertCnt == 0L) throw Exception()
+                logger.debug("Inserted restaurant embedding ${entity.id}")
 
-    override fun upsert(entityList: List<RestaurantEmbedding>) {
-        val dataList = entityList.map { it.toJsonObject() }
-        val upsertReq = UpsertReq.builder()
-            .collectionName(COLLECTION_NAME).data(dataList).build()
+                insertResp
+            } catch (e: MilvusClientException) {
+                logger.error("Failed to insert restaurant embedding ${entity.id}: ${e.message}")
 
-        milvusClient.upsert(upsertReq)
-    }
-
-    override fun delete(idList: List<String>) {
-        val deleteReq = DeleteReq.builder()
-            .collectionName(COLLECTION_NAME).ids(idList).build()
-
-        milvusClient.delete(deleteReq)
-    }
-
-    override fun get(idList: List<String>): List<RestaurantEmbedding> {
-        val getReq = GetReq.builder()
-            .collectionName(COLLECTION_NAME).ids(idList).build()
-
-        val getResp = milvusClient.get(getReq)
-        val entityList = mutableListOf<RestaurantEmbedding>()
-        getResp.getResults.forEach { getResult ->
-            entityList.add(RestaurantEmbedding.fromMap(getResult.entity))
+                throw DataAccessException.milvusAccessUnavailable()
+            }
         }
 
-        return entityList
+        insertRespDeferred.await()
     }
 
-    override fun getAll(): List<RestaurantEmbedding> {
+    override suspend fun insert(
+        entityList: List<RestaurantEmbedding>,
+        batchSize: Int
+    ): Unit = coroutineScope {
+        val insertRespListDeferred = entityList.chunked(batchSize).mapIndexed { idx, batch ->
+            val existingIdList = existingIds(batch.map{ it.id })
+            val filteredList = batch.filter { it.id !in existingIdList }
+            existingIdList.map { id ->
+                launch {
+                    throw InvalidRequestException.duplicateKey(entityList.first { it.id == id })
+                }
+            }
+
+            val dataList = filteredList.map { it.toJsonObject() }
+            val insertReq = InsertReq.builder()
+                .collectionName(COLLECTION_NAME)
+                .data(dataList)
+                .build()
+
+            async {
+                try {
+                    val insertResp = milvusClient.insert(insertReq)
+                    logger.debug("Inserted restaurant embedding: ${insertResp.insertCnt}/${batch.size} (batch $idx)")
+
+                    insertResp
+                } catch(e: MilvusClientException) {
+                    logger.error("Failed to insert restaurant embedding (batch $idx): ${e.message}")
+
+                    throw DataAccessException.milvusAccessUnavailable()
+                }
+            }
+        }
+
+        insertRespListDeferred.awaitAll()
+    }
+
+    override suspend fun upsert(
+        entity: RestaurantEmbedding
+    ): Unit = coroutineScope {
+        val dataList = listOf(entity.toJsonObject())
+        val upsertReq = UpsertReq.builder()
+            .collectionName(COLLECTION_NAME)
+            .data(dataList)
+            .build()
+        val upsertRespDeferred = async {
+            try {
+                val upsertResp = milvusClient.upsert(upsertReq)
+                logger.debug("Upserted restaurant embedding ${entity.id}")
+
+                upsertResp
+            } catch (e: MilvusClientException) {
+                logger.error("Failed to upsert restaurant embedding ${entity.id}: ${e.message}")
+
+                throw DataAccessException.milvusAccessUnavailable()
+            }
+        }
+
+        upsertRespDeferred.await()
+    }
+
+    override suspend fun upsert(
+        entityList: List<RestaurantEmbedding>,
+        batchSize: Int
+    ): Unit = coroutineScope {
+        val upsertRespListDeferred = entityList.chunked(batchSize).mapIndexed { idx, batch ->
+            val dataList = batch.map { it.toJsonObject() }
+            val upsertReq = UpsertReq.builder()
+                .collectionName(COLLECTION_NAME)
+                .data(dataList)
+                .build()
+
+            async {
+                try {
+                    val upsertResp = milvusClient.upsert(upsertReq)
+                    logger.debug("Upserted restaurant embedding: ${upsertResp.upsertCnt}/${batch.size} (batch $idx)")
+
+                    upsertResp
+                } catch(e: MilvusClientException) {
+                    logger.error("Failed to upsert restaurant embedding (batch $idx): ${e.message}")
+
+                    throw DataAccessException.milvusAccessUnavailable()
+                }
+            }
+        }
+
+        upsertRespListDeferred.awaitAll()
+    }
+
+    override suspend fun delete(
+        id: String
+    ): Unit = coroutineScope {
+        val idList = listOf(id)
+        val deleteReq = DeleteReq.builder()
+            .collectionName(COLLECTION_NAME)
+            .ids(idList)
+            .build()
+
+        val deleteRespDeferred = async {
+            try {
+                val deleteResp = milvusClient.delete(deleteReq)
+                logger.error("Deleted restaurant embedding $id")
+
+                deleteResp
+            } catch (e: MilvusClientException) {
+                logger.debug("Failed to delete restaurant embedding $id: ${e.message}")
+
+                throw DataAccessException.milvusAccessUnavailable()
+            }
+        }
+
+        deleteRespDeferred.await()
+    }
+
+    override suspend fun delete(
+        idList: List<String>,
+        batchSize: Int
+    ): Unit = coroutineScope {
+        val deleteRespDeferred = idList.chunked(batchSize).mapIndexed { idx, batch ->
+            val deleteReq = DeleteReq.builder()
+                .collectionName(COLLECTION_NAME)
+                .ids(batch)
+                .build()
+
+            async {
+                try {
+                    val deleteResp = milvusClient.delete(deleteReq)
+                    logger.debug("Deleted restaurant embedding: ${deleteResp.deleteCnt}/${batch.size} (batch $idx)")
+
+                    deleteResp
+                } catch (e: MilvusClientException) {
+                    logger.error("Failed to delete restaurant embedding (batch $idx): ${e.message}")
+
+                    throw DataAccessException.milvusAccessUnavailable()
+                }
+            }
+        }
+
+        deleteRespDeferred.awaitAll()
+    }
+
+    override suspend fun get(
+        id: String
+    ): RestaurantEmbedding = coroutineScope {
+        val idList = listOf(id)
+        val getReq = GetReq.builder()
+            .collectionName(COLLECTION_NAME)
+            .ids(idList)
+            .build()
+
+        val entityDeferred = async {
+            try {
+                val getResp = milvusClient.get(getReq)
+                val getResults = getResp.getResults
+
+                if (getResults.isEmpty()) {
+                    logger.error("restaurant embedding with id $id is not found")
+                    throw EntityNotFoundException.restaurantEmbeddingNotFound(id)
+                }
+
+                val entity = RestaurantEmbedding.fromMap(getResults.first().entity)
+                logger.debug("Get restaurant embedding $id")
+
+                entity
+            } catch (e: MilvusClientException) {
+                logger.error("Failed to get restaurant embedding $id: ${e.message}")
+
+                throw DataAccessException.milvusAccessUnavailable()
+            }
+        }
+
+        entityDeferred.await()
+    }
+
+    override suspend fun get(
+        idList: List<String>,
+        batchSize: Int
+    ): List<RestaurantEmbedding> = coroutineScope {
+        val entityListDeferred = idList.chunked(batchSize).mapIndexed { idx, batch ->
+            val getReq = GetReq.builder()
+                .collectionName(COLLECTION_NAME)
+                .ids(batch)
+                .build()
+
+            async {
+                try {
+                    val getResp = milvusClient.get(getReq)
+                    val getResults = getResp.getResults
+                    val entityList = getResults.map { RestaurantEmbedding.fromMap(it.entity) }
+                    logger.debug("Get restaurant embedding: ${getResults.size}/${batch.size} (batch $idx)")
+
+                    idx to entityList
+                } catch(e: MilvusClientException) {
+                    logger.error("Failed to get restaurant embedding (batch $idx): ${e.message}")
+
+                    throw DataAccessException.milvusAccessUnavailable()
+                }
+            }
+        }
+
+        entityListDeferred.awaitAll()
+            .sortedBy { it.first }
+            .flatMap { it.second }
+    }
+
+    override suspend fun getAll(): List<RestaurantEmbedding> = coroutineScope {
         val queryReq = QueryReq.builder()
             .collectionName(COLLECTION_NAME).filter("id != \"\"").build()
 
-        val queryResp = milvusClient.query(queryReq)
-        val entityList = mutableListOf<RestaurantEmbedding>()
-        queryResp.queryResults.forEach { queryResult ->
-            entityList.add(RestaurantEmbedding.fromMap(queryResult.entity))
+        val entityListDeferred = async {
+            try {
+                val queryResp = milvusClient.query(queryReq)
+                val queryResults = queryResp.queryResults
+                val entityList = queryResults.map { RestaurantEmbedding.fromMap(it.entity) }
+                logger.debug("Get all restaurant embedding")
+
+                entityList
+            } catch (e: MilvusClientException) {
+                logger.error("Failed to get all restaurant embedding")
+
+                throw DataAccessException.milvusAccessUnavailable()
+            }
         }
 
-        return entityList
+        entityListDeferred.await()
     }
+
+    private suspend fun existingIds(
+        idList: List<String>,
+        batchSize: Int = 100
+    ): List<String> = coroutineScope {
+        val existingIdsDeferred = idList.chunked(batchSize).mapIndexed { idx, batch ->
+            val getReq = GetReq.builder()
+                .collectionName(COLLECTION_NAME)
+                .ids(batch)
+                .build()
+
+            async {
+                try {
+                    val getResp = milvusClient.get(getReq)
+                    val getResults = getResp.getResults
+                    val existingIdList = getResults.map { it.entity["id"] as String }
+
+                    idx to existingIdList
+                } catch(e: MilvusClientException) {
+                    throw DataAccessException.milvusAccessUnavailable()
+                }
+            }
+        }
+
+        existingIdsDeferred.awaitAll()
+            .sortedBy { it.first }
+            .flatMap { it.second }
+    }
+
 
     companion object {
         private const val TAG = "RestaurantEmbeddingRepository"
@@ -100,5 +350,6 @@ class RestaurantEmbeddingRepository(
             "moodVector",
             "tasteVector"
         )
+        private const val BATCH_SIZE = 100
     }
 }

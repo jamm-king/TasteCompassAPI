@@ -9,12 +9,13 @@ import io.milvus.v2.service.collection.request.CreateCollectionReq
 import io.milvus.v2.service.collection.request.HasCollectionReq
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
 import java.util.concurrent.ConcurrentHashMap
-import java.util.logging.Logger
 
 @Configuration
 @PropertySource("classpath:milvus.properties")
@@ -24,7 +25,7 @@ open class MilvusConfig (
 ) {
     private val maxRetries = 3
     private val retryDelayMs = 2000L
-    private val logger: Logger = Logger.getLogger(TAG)
+    private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     @Bean
     open fun milvusClient(): MilvusClientV2 {
@@ -42,7 +43,7 @@ open class MilvusConfig (
                 loadCollection(client, collectionName)
             }
 
-            return@retry client
+            client
         }
     }
 
@@ -54,7 +55,7 @@ open class MilvusConfig (
             } catch (ex: Exception) {
                 attempt++
                 if (attempt >= maxAttempts) throw ex
-                logger.warning("Milvus Client connection failed. ${attempt}'th trying...")
+                logger.error("Milvus Client connection failed. ${attempt}'th trying...")
                 runBlocking { delay(delayMs) }
             }
         }
@@ -104,14 +105,13 @@ open class MilvusConfig (
 
                 logger.info("Collection '$collectionName' successfully loaded into memory.")
             } catch (ex: Exception) {
-                logger.severe("Failed to load collection '$collectionName': ${ex.message}")
+                logger.error("Failed to load collection '$collectionName': ${ex.message}")
                 throw ex
             }
         }
     }
 
     companion object {
-        val TAG = "MilvusConfig"
         val COLLECTION_NAMES = listOf(
             "Restaurant"
         )

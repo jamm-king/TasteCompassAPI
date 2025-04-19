@@ -4,10 +4,12 @@ import com.tastecompass.data.common.AnalyzeStep
 import java.util.logging.Logger
 
 data class Restaurant(
-    val id: String,
     val metadata: RestaurantMetadata,
     val embedding: RestaurantEmbedding?,
 ) {
+    val id: String
+        get() = metadata.id
+
     val status: AnalyzeStep
         get() = metadata.status
 
@@ -117,10 +119,78 @@ data class Restaurant(
 
         fun create(metadata: RestaurantMetadata, embedding: RestaurantEmbedding?): Restaurant {
             return Restaurant(
-                id = metadata.id,
                 metadata = metadata,
                 embedding = embedding,
             )
+        }
+
+        fun create(
+            id: String,
+            status: AnalyzeStep = RestaurantProperty.STATUS.defaultValue as AnalyzeStep,
+            source: String = RestaurantProperty.SOURCE.defaultValue as String,
+            name: String = RestaurantProperty.NAME.defaultValue as String,
+            category: String = RestaurantProperty.CATEGORY.defaultValue as String,
+            phone: String = RestaurantProperty.PHONE.defaultValue as String,
+            address: String = RestaurantProperty.ADDRESS.defaultValue as String,
+            x: Double = RestaurantProperty.X.defaultValue as Double,
+            y: Double = RestaurantProperty.Y.defaultValue as Double,
+            reviews: List<String> = RestaurantProperty.REVIEWS.defaultValue as List<String>,
+            businessDays: String = RestaurantProperty.BUSINESS_DAYS.defaultValue as String,
+            url: String = RestaurantProperty.URL.defaultValue as String,
+            hasWifi: Boolean = RestaurantProperty.HAS_WIFI.defaultValue as Boolean,
+            hasParking: Boolean = RestaurantProperty.HAS_PARKING.defaultValue as Boolean,
+            menus: List<RestaurantMenu> = RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
+            minPrice: Int = RestaurantProperty.MIN_PRICE.defaultValue as Int,
+            maxPrice: Int = RestaurantProperty.MAX_PRICE.defaultValue as Int,
+            mood: String = RestaurantProperty.MOOD.defaultValue as String,
+            taste: String = RestaurantProperty.TASTE.defaultValue as String
+        ): Restaurant {
+            val metadata = RestaurantMetadata(
+                id = id, status = status, source = source, name = name, category = category,
+                phone = phone, address = address, x = x, y = y, reviews = reviews,
+                businessDays = businessDays, url = url, hasWifi = hasWifi, hasParking = hasParking,
+                menus = menus, minPrice = minPrice, maxPrice = maxPrice, mood = mood, taste = taste
+            )
+
+            return Restaurant(metadata = metadata, embedding = null)
+        }
+
+        fun create(
+            id: String,
+            status: AnalyzeStep = RestaurantProperty.STATUS.defaultValue as AnalyzeStep,
+            source: String = RestaurantProperty.SOURCE.defaultValue as String,
+            name: String = RestaurantProperty.NAME.defaultValue as String,
+            category: String = RestaurantProperty.CATEGORY.defaultValue as String,
+            phone: String = RestaurantProperty.PHONE.defaultValue as String,
+            address: String = RestaurantProperty.ADDRESS.defaultValue as String,
+            x: Double = RestaurantProperty.X.defaultValue as Double,
+            y: Double = RestaurantProperty.Y.defaultValue as Double,
+            reviews: List<String> = RestaurantProperty.REVIEWS.defaultValue as List<String>,
+            businessDays: String = RestaurantProperty.BUSINESS_DAYS.defaultValue as String,
+            url: String = RestaurantProperty.URL.defaultValue as String,
+            hasWifi: Boolean = RestaurantProperty.HAS_WIFI.defaultValue as Boolean,
+            hasParking: Boolean = RestaurantProperty.HAS_PARKING.defaultValue as Boolean,
+            menus: List<RestaurantMenu> = RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
+            minPrice: Int = RestaurantProperty.MIN_PRICE.defaultValue as Int,
+            maxPrice: Int = RestaurantProperty.MAX_PRICE.defaultValue as Int,
+            mood: String = RestaurantProperty.MOOD.defaultValue as String,
+            taste: String = RestaurantProperty.TASTE.defaultValue as String,
+            moodVector: List<Float> = RestaurantProperty.MOOD_VECTOR.defaultValue as List<Float>,
+            tasteVector: List<Float> = RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>
+        ): Restaurant {
+            val metadata = RestaurantMetadata(
+                id = id, status = status, source = source, name = name, category = category,
+                phone = phone, address = address, x = x, y = y, reviews = reviews,
+                businessDays = businessDays, url = url, hasWifi = hasWifi, hasParking = hasParking,
+                menus = menus, minPrice = minPrice, maxPrice = maxPrice, mood = mood, taste = taste
+            )
+            val embedding = RestaurantEmbedding(
+                metadata = metadata,
+                moodVector = moodVector,
+                tasteVector = tasteVector
+            )
+
+            return Restaurant(metadata = metadata, embedding = embedding)
         }
     }
 }

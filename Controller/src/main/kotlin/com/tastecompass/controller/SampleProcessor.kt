@@ -3,6 +3,7 @@ package com.tastecompass.controller
 import com.tastecompass.data.common.Constants
 import com.tastecompass.data.entity.Restaurant
 import com.tastecompass.analyzer.DefaultAnalyzer
+import com.tastecompass.data.service.RestaurantService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
@@ -12,7 +13,7 @@ import java.util.logging.Logger
 
 @Service
 class SampleProcessor(
-    private val repository: RestaurantRepository
+    private val restaurantService: RestaurantService
 ) : Processor {
     private var scope: CoroutineScope? = null
 
@@ -29,12 +30,12 @@ class SampleProcessor(
         parentScope.launch {
             scope?.launch {
                 logger.info("Start pipeline")
-                val getData = fetchData(repository)
+                val getData = fetchData(restaurantService)
                 val analyzeData = analyze(getData)
                 store(analyzeData)
 
                 // Check DB data for debugging
-                repository.getAll().also {
+                restaurantService.getAll().also {
                     logger.info("Total DB count : ${it.size}")
                     it.forEach { restaurant ->
                         logger.info(restaurant.toReadableString())
@@ -44,14 +45,14 @@ class SampleProcessor(
 
                 // Delete test
                 scope?.launch {
-                    val ids = listOf(1L, 3L)
-                    repository.delete(ids)
+                    val ids = listOf(1L.toString(), 3L.toString())
+                    restaurantService.delete(ids)
                     logger.info("deleted records of id 1, 3")
                 }
                 delay(5000)
 
                 // Check DB data for debugging
-                repository.getAll().also {
+                restaurantService.getAll().also {
                     logger.info("Total DB count : ${it.size}")
                     it.forEach { restaurant ->
                         logger.info(restaurant.toReadableString())
@@ -63,21 +64,21 @@ class SampleProcessor(
                 scope?.launch {
                     (1 until 6).forEach { idx ->
                         delay(1000)
-                        val data = Restaurant(
-                            id = idx.toLong(),
+                        val data = Restaurant.create(
+                            id = idx.toString(),
                             name = "Sample Restaurant $idx",
                             mood = System.currentTimeMillis().toString(),
                             moodVector = List(1536) { idx.toFloat() },
-                            minPrice = 10000.0f * idx,
-                            maxPrice = 20000.0f * idx
+                            minPrice = 10000 * idx,
+                            maxPrice = 20000 * idx
                         )
-                        repository.insert(listOf(data))
+                        restaurantService.insert(listOf(data))
                     }
                 }
                 delay(12000)
 
                 // Check DB data for debugging
-                repository.getAll().also {
+                restaurantService.getAll().also {
                     logger.info("Total DB count : ${it.size}")
                     it.forEach { restaurant ->
                         logger.info(restaurant.toReadableString())
@@ -88,13 +89,10 @@ class SampleProcessor(
                 // Search test
                 scope?.launch {
                     val moodVector = List(Constants.EMBEDDING_SIZE) { 3.0f }
-                    val searchResults = repository.search("mood_vector", 7, listOf(moodVector))
+                    val searchResult = restaurantService.search("mood_vector", 7, moodVector)
                     logger.info("result search for mood_vector [3.0, 3.0, 3.0, ...]")
-                    for (i in searchResults.indices) {
-                        val searchResult = searchResults[i]
-                        searchResult.forEach { restaurant ->
-                            logger.info(restaurant.toReadableString())
-                        }
+                    searchResult.forEach { restaurant ->
+                        logger.info(restaurant.toReadableString())
                     }
                 }
             } ?: logger.warning("scope is null")
@@ -106,8 +104,8 @@ class SampleProcessor(
         scope?.cancel()
     }
 
-    private fun CoroutineScope.fetchData(repository: RestaurantRepository): ReceiveChannel<Restaurant> = produce {
-        repository.getAsFlow().collect {
+    private fun CoroutineScope.fetchData(service: RestaurantService): ReceiveChannel<Restaurant> = produce {
+        service.getAsFlow().collect {
             logger.info("collect data - ${it.name}")
             send(it)
         }
@@ -118,8 +116,8 @@ class SampleProcessor(
             logger.info("analyzing [${sample.name}]")
             scope?.run {
                 val result = DefaultAnalyzer(this).analyze(sample.name ?: "")
-                sample.mood = result
-                logger.info("process pipeline done! [${sample.name}] $result")
+                val updated = sample.update(mood = result)
+                logger.info("process pipeline done! [${updated.name}] $result")
                 sample.mood?.run {
                     send(sample)
                 }
@@ -131,7 +129,7 @@ class SampleProcessor(
         channel.consumeEach { result ->
             logger.info("storing [${result.name}]")
             scope?.run {
-                repository.upsert(listOf(result))
+                restaurantService.upsert(listOf(result))
             }
         }
     }

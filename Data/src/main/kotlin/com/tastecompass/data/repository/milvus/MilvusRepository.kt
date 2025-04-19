@@ -1,10 +1,14 @@
 package com.tastecompass.data.repository.milvus
 
 interface MilvusRepository<T> {
-    fun search(fieldName: String, topK: Int, vectorList: List<List<Float>>): List<List<T>>
-    fun insert(entityList: List<T>)
-    fun upsert(entityList: List<T>)
-    fun delete(idList: List<String>)
-    fun get(idList: List<String>): List<T>
-    fun getAll(): List<T>
+    suspend fun search(fieldName: String, topK: Int, vector: List<Float>): List<T>
+    suspend fun insert(entity: T)
+    suspend fun insert(entityList: List<T>, batchSize: Int = 100)
+    suspend fun upsert(entity: T)
+    suspend fun upsert(entityList: List<T>, batchSize: Int = 100)
+    suspend fun delete(id: String)
+    suspend fun delete(idList: List<String>, batchSize: Int = 100)
+    suspend fun get(id: String): T
+    suspend fun get(idList: List<String>, batchSize: Int = 100): List<T>
+    suspend fun getAll(): List<T>
 }

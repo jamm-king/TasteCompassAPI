@@ -1,18 +1,21 @@
 package com.tastecompass.data.service
 
+import com.mongodb.MongoWriteException
 import com.tastecompass.data.common.AnalyzeStep
 import com.tastecompass.data.entity.Restaurant
 import com.tastecompass.data.entity.RestaurantEmbedding
 import com.tastecompass.data.entity.RestaurantMetadata
+import com.tastecompass.data.exception.EntityNotFoundException
+import com.tastecompass.data.exception.InvalidRequestException
 import com.tastecompass.data.repository.milvus.MilvusRepository
 import com.tastecompass.data.repository.mongo.MongoRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.PreDestroy
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.util.logging.Logger
 
 @Service
 class RestaurantService(
@@ -20,105 +23,171 @@ class RestaurantService(
     private val milvusRepository: MilvusRepository<RestaurantEmbedding>
 ) : DataStorageService<Restaurant> {
 
-    private val logger = Logger.getLogger(TAG)
-    private val updatedRestaurant: MutableSharedFlow<Restaurant> = MutableSharedFlow()
-    override fun search(fieldName: String, topK: Int, vector: List<Float>): List<Restaurant> {
-        val embeddingList = milvusRepository.search(fieldName, topK, listOf(vector)).first()
-        val idList = embeddingList.map{ it.id }
-        val metadataList = mongoRepository.get(idList)
+    private val updatedRestaurant: MutableSharedFlow<Restaurant> = MutableSharedFlow(extraBufferCapacity = 10)
+    private val logger: Logger = LoggerFactory.getLogger(this::class.java)
+
+    override suspend fun search(
+        fieldName: String,
+        topK: Int,
+        vector: List<Float>
+    ): List<Restaurant> = coroutineScope {
+        val embeddingListDeferred = async { milvusRepository.search(fieldName, topK, vector) }
+        val embeddingList = embeddingListDeferred.await()
+        val idList = embeddingList.map { it.id }
+        val metadataListDeferred = async { mongoRepository.get(idList) }
+        val metadataList = metadataListDeferred.await()
         val embeddingMap = embeddingList.associateBy { it.id }
-        return metadataList.map { metadata ->
+
+        metadataList.map { metadata ->
             val embedding = embeddingMap[metadata.id]
             Restaurant.create(metadata, embedding)
         }
     }
 
-//    override fun search(fieldName: String, topK: Int, vectorList: List<List<Float>>): List<List<Restaurant>> {
-//        val resultList = embeddingRepository.search(fieldName, topK, vectorList)
-//        return resultList.map { embeddingList ->
-//            val idList = embeddingList.map { it.id }
-//            val metadataList = metadataRepository.get(idList)
-//            val embeddingMap = embeddingList.associateBy { it.id }
-//            metadataList.map { metadata ->
-//                val embedding = embeddingMap[metadata.id]
-//                Restaurant.createRestaurant(metadata, embedding)
-//            }
-//        }
-//    }
+    override suspend fun insert(
+        entity: Restaurant
+    ) = coroutineScope {
+        if(entity.status != AnalyzeStep.PREPARED)
+            throw InvalidRequestException.invalidInsertState(entity)
 
-    override fun insert(entity: Restaurant) {
-        insert(listOf(entity))
-    }
-
-    override fun insert(entityList: List<Restaurant>) {
-        val preparedEntities = entityList.filter { it.status == AnalyzeStep.PREPARED }
-        if (preparedEntities.isNotEmpty()) {
-            handlePreparedEntities(preparedEntities)
+        try {
+            handlePreparedEntity(entity)
+        } catch (e: InvalidRequestException) {
+            logger.error("Failed to handle prepared entity: ${e.message}")
+            throw e
+        } catch (e: Exception) {
+            logger.error("Unexpected error occurred while handling prepared entity", e)
+            throw e
         }
     }
 
-    override fun update(entity: Restaurant) {
-        update(listOf(entity))
+    override suspend fun insert(entityList: List<Restaurant>): Unit = coroutineScope {
+        val preparedEntities = entityList.filter { it.status == AnalyzeStep.PREPARED }
+
+        if(preparedEntities.isEmpty())
+            throw InvalidRequestException.invalidInsertState()
+
+        handlePreparedEntities(preparedEntities)
     }
 
-    override fun update(entityList: List<Restaurant>) {
+    override suspend fun update(
+        entity: Restaurant
+    ): Unit = coroutineScope {
+        when (entity.status) {
+            AnalyzeStep.PREPARED -> throw InvalidRequestException.invalidUpdateState(entity)
+            AnalyzeStep.ANALYZED -> handleAnalyzedEntity(entity)
+            AnalyzeStep.EMBEDDED -> handleEmbeddedEntity(entity)
+        }
+    }
+
+    override suspend fun update(
+        entityList: List<Restaurant>
+    ): Unit = coroutineScope {
         val analyzedEntities = entityList.filter { it.status == AnalyzeStep.ANALYZED }
         val embeddedEntities = entityList.filter { it.status == AnalyzeStep.EMBEDDED }
 
-        if (analyzedEntities.isNotEmpty()) {
+        if(analyzedEntities.isEmpty() && embeddedEntities.isEmpty())
+            throw InvalidRequestException.invalidUpdateState()
+
+        if (analyzedEntities.isNotEmpty())
             handleAnalyzedEntities(analyzedEntities)
-        }
-
-        if (embeddedEntities.isNotEmpty()) {
+        if (embeddedEntities.isNotEmpty())
             handleEmbeddedEntities(embeddedEntities)
+    }
+
+    override suspend fun upsert(
+        entity: Restaurant
+    ): Unit = coroutineScope {
+        var isExisting = true
+        try {
+            mongoRepository.get(entity.id)
+        } catch(e: EntityNotFoundException) {
+            isExisting = false
+        }
+
+        when(isExisting) {
+            true -> update(entity)
+            false -> insert(entity)
         }
     }
 
-    override fun upsert(entity: Restaurant) {
-        upsert(listOf(entity))
-    }
-
-    override fun upsert(entityList: List<Restaurant>) {
-        val existingIds = mongoRepository.get(entityList.map { it.id }).map { it.id }.toSet()
+    override suspend fun upsert(
+        entityList: List<Restaurant>
+    ): Unit = coroutineScope {
+        val existingIdsDeferred = async {
+            mongoRepository.get(entityList.map { it.id })
+                .map { it.id }
+                .toSet()
+        }
+        val existingIds = existingIdsDeferred.await()
         val toInsert = entityList.filter { it.id !in existingIds }
         val toUpdate = entityList.filter { it.id in existingIds }
 
-        if (toInsert.isNotEmpty()) {
+        if (toInsert.isNotEmpty())
             insert(toInsert)
-        }
-        if (toUpdate.isNotEmpty()) {
+        if (toUpdate.isNotEmpty())
             update(toUpdate)
+    }
+
+    override suspend fun delete(
+        id: String
+    ): Unit = coroutineScope {
+        try {
+            val milvusJob = launch { milvusRepository.delete(id) }
+            val mongoJob = launch { mongoRepository.delete(id) }
+
+            milvusJob.join()
+            mongoJob.join()
+        } catch(e: Exception) {
+            throw e
         }
     }
 
-    override fun delete(id: String) {
-        delete(listOf(id))
+    override suspend fun delete(
+        idList: List<String>
+    ): Unit = coroutineScope {
+        try {
+            val milvusJob = launch { milvusRepository.delete(idList) }
+            val mongoJob = launch { mongoRepository.delete(idList) }
+
+            milvusJob.join()
+            mongoJob.join()
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
-    override fun delete(idList: List<String>) {
-        mongoRepository.delete(idList)
-        milvusRepository.delete(idList)
+    override suspend fun get(id: String): Restaurant {
+        return get(listOf(id)).firstOrNull() ?: throw EntityNotFoundException.restaurantNotFound(id)
     }
 
-    override fun get(id: String): Restaurant? {
-        return get(listOf(id)).firstOrNull()
-    }
+    override suspend fun get(
+        idList: List<String>
+    ): List<Restaurant> = coroutineScope {
+        val metadataDeferred = async { mongoRepository.get(idList) }
+        val embeddingDeferred = async { milvusRepository.get(idList) }
 
-    override fun get(idList: List<String>): List<Restaurant> {
-        val metadataList = mongoRepository.get(idList)
-        val embeddingList = milvusRepository.get(idList)
+        val metadataList = metadataDeferred.await()
+        val embeddingList = embeddingDeferred.await()
+
         val embeddingMap = embeddingList.associateBy { it.id }
-        return metadataList.map { metadata ->
+        val entityList = metadataList.map { metadata ->
             val embedding = embeddingMap[metadata.id]
             Restaurant.create(metadata, embedding)
         }
+
+        entityList
     }
 
-    override fun getAll(): List<Restaurant> {
-        val metadataList = mongoRepository.getAll()
-        val embeddingList = milvusRepository.getAll()
+    override suspend fun getAll(): List<Restaurant> = coroutineScope {
+        val metadataDeferred = async { mongoRepository.getAll() }
+        val embeddingDeferred = async { milvusRepository.getAll() }
+
+        val metadataList = metadataDeferred.await()
+        val embeddingList = embeddingDeferred.await()
         val embeddingMap = embeddingList.associateBy { it.id }
-        return metadataList.map { metadata ->
+
+        metadataList.map { metadata ->
             val embedding = embeddingMap[metadata.id]
             Restaurant.create(metadata, embedding)
         }
@@ -126,45 +195,86 @@ class RestaurantService(
 
     override fun getAsFlow(): Flow<Restaurant> = updatedRestaurant
 
-    private fun handlePreparedEntities(preparedEntities: List<Restaurant>) {
+    private suspend fun handlePreparedEntity(preparedEntity: Restaurant) = coroutineScope {
+        try {
+            val metadata = preparedEntity.metadata
+            val job = launch { mongoRepository.insert(metadata) }
+
+            job.join()
+            updatedRestaurant.emit(preparedEntity)
+        } catch (e: InvalidRequestException) {
+            logger.error("Failed to handle prepared entity: ${e.message}")
+            throw e
+        } catch (e: Exception) {
+            logger.error("Unexpected error occurred while handling prepared entity", e)
+            throw e
+        }
+    }
+
+
+    private  suspend fun handlePreparedEntities(preparedEntities: List<Restaurant>) = coroutineScope {
         try {
             val metadataList = preparedEntities.map { it.metadata }
-            mongoRepository.insert(metadataList)
-            preparedEntities.forEach { restaurant ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    updatedRestaurant.emit(restaurant)
-                }
-            }
+            val job = launch { mongoRepository.insert(metadataList) }
+
+            job.join()
+            preparedEntities.asFlow()
+                .onEach { restaurant -> updatedRestaurant.emit(restaurant) }
         } catch (e: Exception) {
-            logger.severe("Failed to handle prepared entities: ${e.message}")
+            logger.error("Failed to handle prepared entities: ${e.message}")
         }
     }
 
-    private fun handleAnalyzedEntities(analyzedEntities: List<Restaurant>) {
+    private suspend fun handleAnalyzedEntity(analyzedEntity: Restaurant) = coroutineScope {
+        try {
+            val metadata = analyzedEntity.metadata
+            val job = launch { mongoRepository.update(metadata) }
+
+            job.join()
+            updatedRestaurant.emit(analyzedEntity)
+        } catch (e: Exception) {
+            logger.error("Failed to handle analyzed entities: ${e.message}")
+        }
+    }
+
+    private suspend fun handleAnalyzedEntities(analyzedEntities: List<Restaurant>) = coroutineScope {
         try {
             val metadataList = analyzedEntities.map { it.metadata }
-            mongoRepository.update(metadataList)
-            analyzedEntities.forEach { restaurant ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    updatedRestaurant.emit(restaurant)
-                } }
+            val job = launch { mongoRepository.update(metadataList) }
+
+            job.join()
+            analyzedEntities.asFlow()
+                .onEach { restaurant -> updatedRestaurant.emit(restaurant) }
         } catch (e: Exception) {
-            logger.severe("Failed to handle analyzed entities: ${e.message}")
+            logger.error("Failed to handle analyzed entities: ${e.message}")
         }
     }
 
-    private fun handleEmbeddedEntities(embeddedEntities: List<Restaurant>) {
+    private suspend fun handleEmbeddedEntity(embeddedEntity: Restaurant) = coroutineScope {
+        try {
+            val metadata = embeddedEntity.metadata
+            val embedding = embeddedEntity.embedding ?: throw Exception("Restaurant id ${embeddedEntity.id} has no embedding")
+            val mongoJob = launch { mongoRepository.update(metadata) }
+            val milvusJob = launch { milvusRepository.upsert(embedding) }
+
+            mongoJob.join()
+            milvusJob.join()
+        } catch (e: Exception) {
+            logger.error("Failed to handle embedded entities: ${e.message}")
+        }
+    }
+
+    private suspend fun handleEmbeddedEntities(embeddedEntities: List<Restaurant>) = coroutineScope {
         try {
             val metadataList = embeddedEntities.map { it.metadata }
             val embeddingList = embeddedEntities.map { it.embedding ?: throw Exception("Restaurant id ${it.id} has no embedding") }
-            mongoRepository.update(metadataList)
-            milvusRepository.insert(embeddingList)
-            embeddedEntities.forEach { restaurant ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    updatedRestaurant.emit(restaurant)
-                } }
+            val mongoJob = launch { mongoRepository.update(metadataList) }
+            val milvusJob = launch { milvusRepository.upsert(embeddingList) }
+
+            mongoJob.join()
+            milvusJob.join()
         } catch (e: Exception) {
-            logger.severe("Failed to handle embedded entities: ${e.message}")
+            logger.error("Failed to handle embedded entities: ${e.message}")
         }
     }
 

@@ -3,6 +3,6 @@ package com.tastecompass.controller
 import kotlinx.coroutines.CoroutineScope
 
 interface Processor {
-    fun start(scope: CoroutineScope)
+    fun start(parentScope: CoroutineScope)
     fun stop()
 }

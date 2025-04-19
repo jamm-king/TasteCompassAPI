@@ -1,6 +1,7 @@
 package com.tastecompass.data.service
 
 import com.tastecompass.data.common.AnalyzeStep
+import com.tastecompass.data.common.Constants
 import com.tastecompass.data.entity.*
 import com.tastecompass.data.repository.milvus.MilvusRepository
 import com.tastecompass.data.repository.mongo.MongoRepository
@@ -23,20 +24,25 @@ class RestaurantServiceMockTest {
     @InjectMocks
     private lateinit var restaurantService: RestaurantService
 
-    private val metadataSample = RestaurantMetadataSample()
-    private val embeddingSample = RestaurantEmbeddingSample()
+    val testId1 = "test-1"
 
     @Test
-    fun `search should return processed list of restaurants`() {
+    fun `should return processed list of restaurants`() = runTest {
         val fieldName = "taste"
         val topK = 5
         val vector = listOf(0.1f, 0.2f, 0.3f)
-        val vectorList = listOf(vector)
-        val mockEmbedding = embeddingSample.data()[0]
-        val mockMetadata = metadataSample.data()[0]
+        val mockEmbedding = RestaurantEmbedding(
+            id = testId1,
+            moodVector = List(Constants.EMBEDDING_SIZE) { 0.2f }
+        )
+        val mockMetadata = RestaurantMetadata(
+            id = testId1,
+            status = AnalyzeStep.PREPARED,
+            name = "name-1"
+        )
 
-        `when`(milvusRepository.search(fieldName, topK, vectorList))
-            .thenReturn(listOf(listOf(mockEmbedding)))
+        `when`(milvusRepository.search(fieldName, topK, vector))
+            .thenReturn(listOf(mockEmbedding))
         `when`(mongoRepository.get(listOf("1")))
             .thenReturn(listOf(mockMetadata))
 
@@ -44,7 +50,7 @@ class RestaurantServiceMockTest {
 
         assertEquals(1, result.size)
         assertEquals("Restaurant A", result[0].name)
-        verify(milvusRepository).search(fieldName, topK, vectorList)
+        verify(milvusRepository).search(fieldName, topK, vector)
         verify(mongoRepository).get(listOf("1"))
     }
 
@@ -113,7 +119,7 @@ class RestaurantServiceMockTest {
     }
 
     @Test
-    fun `delete should call repositories with given IDs`() {
+    fun `delete should call repositories with given IDs`() = runTest {
         val idList = listOf("1", "2")
 
         restaurantService.delete(idList)
@@ -123,7 +129,7 @@ class RestaurantServiceMockTest {
     }
 
     @Test
-    fun `get should return restaurants with combined metadata and embeddings`() {
+    fun `get should return restaurants with combined metadata and embeddings`() = runTest {
         val idList = listOf("1")
         val metadata = RestaurantMetadata("1", AnalyzeStep.EMBEDDED, name = "Restaurant A")
         val embedding = RestaurantEmbedding("1", tasteVector = listOf(0.1f, 0.2f))
@@ -139,7 +145,7 @@ class RestaurantServiceMockTest {
     }
 
     @Test
-    fun `getAll should return all restaurants`() {
+    fun `getAll should return all restaurants`() = runTest {
         val metadata = RestaurantMetadata("1", AnalyzeStep.EMBEDDED, name = "Restaurant A")
         val embedding = RestaurantEmbedding("1", tasteVector = listOf(0.1f, 0.2f))
 
