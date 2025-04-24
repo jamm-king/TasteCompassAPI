@@ -2,7 +2,7 @@ package com.tastecompass.analyzer.client
 
 import com.openai.client.OpenAIClient
 import com.openai.models.chat.completions.ChatCompletionCreateParams
-import com.tastecompass.analyzer.common.OpenAIProperties
+import com.tastecompass.openai.common.OpenAIProperties
 import org.springframework.stereotype.Component
 
 @Component
