@@ -1,9 +1,9 @@
 package com.tastecompass.data.repository.milvus
 
-import com.tastecompass.data.common.Constants
+import com.tastecompass.domain.common.Constants
 import com.tastecompass.data.config.MilvusConfig
-import com.tastecompass.data.entity.RestaurantEmbedding
-import com.tastecompass.data.entity.RestaurantProperty
+import com.tastecompass.domain.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.RestaurantProperty
 import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException
 import kotlinx.coroutines.runBlocking

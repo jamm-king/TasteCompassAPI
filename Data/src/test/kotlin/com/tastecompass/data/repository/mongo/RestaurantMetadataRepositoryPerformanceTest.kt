@@ -8,9 +8,9 @@ import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.Updates.combine
 import com.mongodb.client.model.Updates.set
 import com.mongodb.kotlin.client.MongoClient
-import com.tastecompass.data.common.AnalyzeStep
+import com.tastecompass.domain.common.AnalyzeStep
 import com.tastecompass.data.config.MongoConfig
-import com.tastecompass.data.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.RestaurantMetadata
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.junit.jupiter.api.AfterEach

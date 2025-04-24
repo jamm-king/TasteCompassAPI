@@ -10,7 +10,7 @@ import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.Updates.combine
 import com.mongodb.client.model.Updates.set
 import com.mongodb.kotlin.client.MongoClient
-import com.tastecompass.data.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.RestaurantMetadata
 import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException
 import kotlinx.coroutines.*

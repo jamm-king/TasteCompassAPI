@@ -1,6 +1,6 @@
 package com.tastecompass.data.repository.milvus
 
-import com.tastecompass.data.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.RestaurantEmbedding
 import com.tastecompass.data.exception.DataAccessException
 import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException

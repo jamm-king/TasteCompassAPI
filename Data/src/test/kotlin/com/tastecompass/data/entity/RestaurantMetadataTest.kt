@@ -1,6 +1,8 @@
 package com.tastecompass.data.entity
 
-import com.tastecompass.data.common.AnalyzeStep
+import com.tastecompass.domain.common.AnalyzeStep
+import com.tastecompass.domain.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.RestaurantProperty
 import org.bson.Document
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

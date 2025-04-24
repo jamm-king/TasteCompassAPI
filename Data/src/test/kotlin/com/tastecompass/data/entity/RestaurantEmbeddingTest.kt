@@ -2,7 +2,8 @@ package com.tastecompass.data.entity
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import com.tastecompass.data.common.Constants
+import com.tastecompass.domain.common.Constants
+import com.tastecompass.domain.entity.RestaurantEmbedding
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

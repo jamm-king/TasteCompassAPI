@@ -1,7 +1,7 @@
 package com.tastecompass.data.repository.milvus
 
 import com.tastecompass.data.config.MilvusConfig
-import com.tastecompass.data.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.RestaurantEmbedding
 import io.milvus.v2.client.MilvusClientV2
 import io.milvus.v2.service.vector.request.DeleteReq
 import io.milvus.v2.service.vector.request.GetReq

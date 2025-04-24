@@ -1,8 +1,8 @@
 package com.tastecompass.data.exception
 
-import com.tastecompass.data.entity.Restaurant
-import com.tastecompass.data.entity.RestaurantEmbedding
-import com.tastecompass.data.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.Restaurant
+import com.tastecompass.domain.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.RestaurantMetadata
 
 sealed class DataModuleException(message: String): RuntimeException(message)
 

@@ -1,10 +1,10 @@
 package com.tastecompass.data.repository.mongo
 
 import com.mongodb.kotlin.client.MongoClient
-import com.tastecompass.data.common.AnalyzeStep
+import com.tastecompass.domain.common.AnalyzeStep
 import com.tastecompass.data.config.MongoConfig
-import com.tastecompass.data.entity.RestaurantMetadata
-import com.tastecompass.data.entity.RestaurantProperty
+import com.tastecompass.domain.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.RestaurantProperty
 import com.tastecompass.data.exception.EntityNotFoundException
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
