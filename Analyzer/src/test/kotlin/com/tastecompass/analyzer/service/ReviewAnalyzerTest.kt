@@ -1,7 +1,7 @@
 package com.tastecompass.analyzer.service
 
 import com.tastecompass.analyzer.client.OpenAIChatter
-import com.tastecompass.analyzer.config.OpenAIConfig
+import com.tastecompass.openai.config.OpenAIConfig
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
