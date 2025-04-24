@@ -1,6 +1,6 @@
 package com.tastecompass.data.config
 
-import com.tastecompass.data.common.Constants
+import com.tastecompass.domain.common.Constants
 import com.tastecompass.data.common.MilvusProperties
 import io.milvus.v2.client.MilvusClientV2
 import io.milvus.v2.client.ConnectConfig

@@ -1,10 +1,13 @@
 package com.tastecompass.data.service
 
-import com.tastecompass.data.common.AnalyzeStep
-import com.tastecompass.data.common.Constants
+import com.tastecompass.domain.common.AnalyzeStep
+import com.tastecompass.domain.common.Constants
 import com.tastecompass.data.entity.*
 import com.tastecompass.data.repository.milvus.MilvusRepository
 import com.tastecompass.data.repository.mongo.MongoRepository
+import com.tastecompass.domain.entity.Restaurant
+import com.tastecompass.domain.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.RestaurantMetadata
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith

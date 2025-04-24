@@ -1,7 +1,7 @@
 package com.tastecompass.data.service
 
-import com.tastecompass.data.common.AnalyzeStep
-import com.tastecompass.data.common.Constants
+import com.tastecompass.domain.common.AnalyzeStep
+import com.tastecompass.domain.common.Constants
 import com.tastecompass.data.config.MilvusConfig
 import com.tastecompass.data.config.MongoConfig
 import com.tastecompass.data.entity.*
@@ -9,6 +9,8 @@ import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException
 import com.tastecompass.data.repository.milvus.RestaurantEmbeddingRepository
 import com.tastecompass.data.repository.mongo.RestaurantMetadataRepository
+import com.tastecompass.domain.entity.Restaurant
+import com.tastecompass.domain.entity.RestaurantMenu
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.take
 import org.junit.jupiter.api.AfterEach
