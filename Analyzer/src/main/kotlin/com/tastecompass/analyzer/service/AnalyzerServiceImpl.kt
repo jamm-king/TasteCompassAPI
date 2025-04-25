@@ -2,26 +2,31 @@ package com.tastecompass.analyzer.service
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import com.tastecompass.analyzer.client.OpenAIChatter
 import com.tastecompass.analyzer.dto.AnalysisResult
 import com.tastecompass.analyzer.prompt.PromptTemplate
+import com.tastecompass.openai.client.OpenAIClientWrapper
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class ReviewAnalyzer(
-    private val openaiClient: OpenAIChatter
-): Analyzer {
+class AnalyzerServiceImpl(
+    private val client: OpenAIClientWrapper
+): AnalyzerService {
     private val gson = Gson()
 
-    override suspend fun analyze(review: String): AnalysisResult {
+    override fun analyze(review: String): AnalysisResult {
         val prompt = PromptTemplate.forReviewAnalysis(review)
-        val response = openaiClient.chat(prompt)
+        val response = client.chat(prompt)
 
         return try {
             gson.fromJson(response, AnalysisResult::class.java)
         } catch (e: JsonSyntaxException) {
-            println("failed to parse: $response")
+            logger.error("failed to parse: $response")
             AnalysisResult(null, null, null, null)
         }
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(this::class.simpleName)
     }
 }
