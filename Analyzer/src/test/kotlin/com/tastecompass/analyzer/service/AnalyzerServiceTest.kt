@@ -1,9 +1,8 @@
 package com.tastecompass.analyzer.service
 
-import com.tastecompass.analyzer.client.OpenAIChatter
+import com.tastecompass.openai.client.OpenAIClientWrapperImpl
 import com.tastecompass.openai.config.OpenAIConfig
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.LoggerFactory
@@ -13,12 +12,12 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringExtension
 
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes=[OpenAIConfig::class, OpenAIChatter::class, ReviewAnalyzer::class])
+@ContextConfiguration(classes=[OpenAIConfig::class, OpenAIClientWrapperImpl::class, AnalyzerServiceImpl::class])
 @TestPropertySource("classpath:openai.properties")
-class ReviewAnalyzerTest {
+class AnalyzerServiceTest {
 
     @Autowired
-    lateinit var reviewAnalyzer: ReviewAnalyzer
+    lateinit var analyzerService: AnalyzerService
 
     private val logger = LoggerFactory.getLogger(this::class.simpleName)
     private val review = """
@@ -117,7 +116,7 @@ class ReviewAnalyzerTest {
 
     @Test
     fun `should extract attributes from review`() = runBlocking {
-        val json = reviewAnalyzer.analyze(review)
+        val json = analyzerService.analyze(review)
         logger.info(json.toString())
     }
 }
