@@ -3,6 +3,8 @@ package com.tastecompass.embedding.service
 import com.tastecompass.embedding.client.OpenAIEmbedder
 import com.tastecompass.embedding.dto.EmbeddingResult
 import com.tastecompass.embedding.dto.EmbeddingRequest
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
@@ -10,11 +12,16 @@ import org.springframework.stereotype.Service
 class EmbeddingService(
     private val openaiClient: OpenAIEmbedder
 ) {
-    fun embed(embeddingRequest: EmbeddingRequest): EmbeddingResult {
-        val moodVector = openaiClient.embed(embeddingRequest.mood)
-        val tasteVector = openaiClient.embed(embeddingRequest.taste)
+    suspend fun embed(
+        embeddingRequest: EmbeddingRequest
+    ): EmbeddingResult = coroutineScope {
+        val moodVectorDeferred = async { openaiClient.embed(embeddingRequest.mood) }
+        val tasteVectorDeferred = async { openaiClient.embed(embeddingRequest.taste) }
 
-        return EmbeddingResult(
+        val moodVector = moodVectorDeferred.await()
+        val tasteVector = tasteVectorDeferred.await()
+
+        EmbeddingResult(
             moodVector = moodVector,
             tasteVector = tasteVector
         )
