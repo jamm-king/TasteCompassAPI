@@ -2,11 +2,11 @@ package com.tastecompass.embedding.facade
 
 import com.tastecompass.domain.common.AnalyzeStep
 import com.tastecompass.domain.entity.Restaurant
-import com.tastecompass.embedding.client.OpenAIEmbedder
 import com.tastecompass.embedding.service.EmbeddingService
+import com.tastecompass.embedding.service.EmbeddingServiceImpl
+import com.tastecompass.openai.client.OpenAIClientWrapperImpl
 import com.tastecompass.openai.config.OpenAIConfig
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.LoggerFactory
@@ -15,11 +15,10 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes=[OpenAIConfig::class, OpenAIEmbedder::class,
-    EmbeddingService::class, EmbeddingFacade::class])
-class EmbeddingFacadeTest {
+@ContextConfiguration(classes=[OpenAIConfig::class, OpenAIClientWrapperImpl::class, EmbeddingServiceImpl::class])
+class EmbeddingServiceTest {
     @Autowired
-    lateinit var embeddingFacade: EmbeddingFacade
+    lateinit var embeddingService: EmbeddingService
 
     private val logger = LoggerFactory.getLogger(this::class.simpleName)
 
@@ -32,7 +31,7 @@ class EmbeddingFacadeTest {
             taste = "담백하게 맛있다"
         )
 
-        val embeddingResult = embeddingFacade.embedRestaurant(restaurant)
+        val embeddingResult = embeddingService.embed(restaurant)
         logger.info("mood vector: ${embeddingResult.moodVector}")
         logger.info("taste vector: ${embeddingResult.tasteVector}")
     }
