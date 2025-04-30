@@ -1,7 +1,7 @@
 package com.tastecompass.data.repository.milvus
 
 import com.tastecompass.data.config.MilvusConfig
-import com.tastecompass.domain.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.Embedding
 import io.milvus.v2.client.MilvusClientV2
 import io.milvus.v2.service.vector.request.DeleteReq
 import io.milvus.v2.service.vector.request.GetReq
@@ -21,14 +21,14 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 import kotlin.system.measureTimeMillis
 
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes=[MilvusConfig::class, RestaurantEmbeddingRepository::class])
+@ContextConfiguration(classes=[MilvusConfig::class, EmbeddingRepository::class])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class RestaurantEmbeddingRepositoryPerformanceTest {
+class EmbeddingRepositoryPerformanceTest {
 
     @Autowired
     private lateinit var client: MilvusClientV2
     @Autowired
-    private lateinit var repository: RestaurantEmbeddingRepository
+    private lateinit var repository: EmbeddingRepository
 
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
@@ -56,7 +56,7 @@ class RestaurantEmbeddingRepositoryPerformanceTest {
     @Test
     fun `client get performance test`() = runBlocking {
         val id = "restaurant-1"
-        val embedding = RestaurantEmbedding(id = id)
+        val embedding = Embedding(id = id)
         val idList = listOf(id)
         val dataList = listOf(embedding.toJsonObject())
         val insertReq = InsertReq.builder()
@@ -78,7 +78,7 @@ class RestaurantEmbeddingRepositoryPerformanceTest {
     @Test
     fun `client insert performance test`() = runBlocking {
         val id = "restaurant-1"
-        val embedding = RestaurantEmbedding(id = id)
+        val embedding = Embedding(id = id)
         val dataList = listOf(embedding.toJsonObject())
         val insertReq = InsertReq.builder()
             .collectionName(COLLECTION_NAME)
@@ -94,7 +94,7 @@ class RestaurantEmbeddingRepositoryPerformanceTest {
     @Test
     fun `client upsert performance test`() = runBlocking {
         val id = "restaurant-1"
-        val embedding = RestaurantEmbedding(id = id)
+        val embedding = Embedding(id = id)
         val dataList = listOf(embedding.toJsonObject())
         val upsertReq = UpsertReq.builder()
             .collectionName(COLLECTION_NAME)
@@ -110,7 +110,7 @@ class RestaurantEmbeddingRepositoryPerformanceTest {
     @Test
     fun `client delete performance test`() = runBlocking {
         val id = "restaurant-1"
-        val embedding = RestaurantEmbedding(id = id)
+        val embedding = Embedding(id = id)
         val dataList = listOf(embedding.toJsonObject())
         val insertReq = InsertReq.builder()
             .collectionName(COLLECTION_NAME)
@@ -133,10 +133,10 @@ class RestaurantEmbeddingRepositoryPerformanceTest {
     @Test
     fun `repository get performance test`() = runBlocking {
         val idList = mutableListOf<String>()
-        val embeddingList = mutableListOf<RestaurantEmbedding>()
+        val embeddingList = mutableListOf<Embedding>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val embedding = RestaurantEmbedding(id = id)
+            val embedding = Embedding(id = id)
             idList.add(id)
             embeddingList.add(embedding)
             insertedIds.add(id)
@@ -152,10 +152,10 @@ class RestaurantEmbeddingRepositoryPerformanceTest {
 
     @Test
     fun `repository insert performance test`() = runBlocking {
-        val embeddingList = mutableListOf<RestaurantEmbedding>()
+        val embeddingList = mutableListOf<Embedding>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val embedding = RestaurantEmbedding(id = id)
+            val embedding = Embedding(id = id)
             embeddingList.add(embedding)
             insertedIds.add(id)
         }
@@ -169,10 +169,10 @@ class RestaurantEmbeddingRepositoryPerformanceTest {
 
     @Test
     fun `repository upsert performance test`() = runBlocking {
-        val embeddingList = mutableListOf<RestaurantEmbedding>()
+        val embeddingList = mutableListOf<Embedding>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val embedding = RestaurantEmbedding(id = id)
+            val embedding = Embedding(id = id)
             embeddingList.add(embedding)
             insertedIds.add(id)
         }
@@ -191,10 +191,10 @@ class RestaurantEmbeddingRepositoryPerformanceTest {
     @Test
     fun `repository delete performance test`() = runBlocking {
         val idList = mutableListOf<String>()
-        val embeddingList = mutableListOf<RestaurantEmbedding>()
+        val embeddingList = mutableListOf<Embedding>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val embedding = RestaurantEmbedding(id = id)
+            val embedding = Embedding(id = id)
             idList.add(id)
             embeddingList.add(embedding)
             insertedIds.add(id)

@@ -1,13 +1,13 @@
-package com.tastecompass.data.entity
+package com.tastecompass.domain.entity
 
 import com.tastecompass.domain.common.AnalyzeStep
-import com.tastecompass.domain.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.Metadata
 import com.tastecompass.domain.entity.RestaurantProperty
 import org.bson.Document
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class RestaurantMetadataTest {
+class MetadataTest {
 
     @Test
     fun `fromDocument should return entity with given document`() {
@@ -17,7 +17,7 @@ class RestaurantMetadataTest {
             put("name", "name-1")
         }
 
-        val metadata = RestaurantMetadata.fromDocument(document)
+        val metadata = Metadata.fromDocument(document)
 
         assertEquals("test-1", metadata.id)
         assertEquals(AnalyzeStep.PREPARED, metadata.status)
@@ -29,7 +29,7 @@ class RestaurantMetadataTest {
 
     @Test
     fun `toDocument should return document of entity`() {
-        val metadata = RestaurantMetadata(
+        val metadata = Metadata(
             id = "test-1",
             status = AnalyzeStep.PREPARED,
             name = "name-1"
@@ -44,7 +44,7 @@ class RestaurantMetadataTest {
 
     @Test
     fun `update should return newly bounded object with updated data`() {
-        val metadata = RestaurantMetadata(
+        val metadata = Metadata(
             id = "test-1",
             status = AnalyzeStep.PREPARED,
             name = "name-1"

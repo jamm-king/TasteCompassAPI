@@ -10,7 +10,7 @@ import com.mongodb.client.model.Updates.set
 import com.mongodb.kotlin.client.MongoClient
 import com.tastecompass.domain.common.AnalyzeStep
 import com.tastecompass.data.config.MongoConfig
-import com.tastecompass.domain.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.Metadata
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.junit.jupiter.api.AfterEach
@@ -26,15 +26,15 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 import kotlin.system.measureTimeMillis
 
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes=[MongoConfig::class, RestaurantMetadataRepository::class])
+@ContextConfiguration(classes=[MongoConfig::class, MetadataRepository::class])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 
-class RestaurantMetadataRepositoryPerformanceTest {
+class MetadataRepositoryPerformanceTest {
 
     @Autowired
     lateinit var client: MongoClient
     @Autowired
-    lateinit var repository: RestaurantMetadataRepository
+    lateinit var repository: MetadataRepository
 
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
@@ -65,11 +65,11 @@ class RestaurantMetadataRepositoryPerformanceTest {
         val collection = database.getCollection<Document>(COLLECTION_NAME)
 
         val id = "restaurant-1"
-        val metadata = RestaurantMetadata(id = id, status = AnalyzeStep.PREPARED)
+        val metadata = Metadata(id = id, status = AnalyzeStep.PREPARED)
         repository.insert(metadata)
         insertedIds.add(id)
 
-        val filter = eq(RestaurantMetadata::id.name, id)
+        val filter = eq(Metadata::id.name, id)
 
         val elapsed = measureTimeMillis {
             collection.find(filter)
@@ -83,10 +83,10 @@ class RestaurantMetadataRepositoryPerformanceTest {
         val collection = database.getCollection<Document>(COLLECTION_NAME)
 
         val idList = mutableListOf<String>()
-        val metadataList = mutableListOf<RestaurantMetadata>()
+        val metadataList = mutableListOf<Metadata>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id,
                 status = AnalyzeStep.PREPARED
             )
@@ -96,7 +96,7 @@ class RestaurantMetadataRepositoryPerformanceTest {
         repository.insert(metadataList, batchSize)
         insertedIds.addAll(idList)
 
-        val filter = `in`(RestaurantMetadata::id.name, idList)
+        val filter = `in`(Metadata::id.name, idList)
 
         val elapsed = measureTimeMillis {
             collection.find(filter)
@@ -110,7 +110,7 @@ class RestaurantMetadataRepositoryPerformanceTest {
         val collection = database.getCollection<Document>(COLLECTION_NAME)
 
         val id = "restaurant-1"
-        val document = RestaurantMetadata(id = id, status = AnalyzeStep.PREPARED).toDocument()
+        val document = Metadata(id = id, status = AnalyzeStep.PREPARED).toDocument()
 
         val elapsed = measureTimeMillis {
             collection.insertOne(document)
@@ -128,7 +128,7 @@ class RestaurantMetadataRepositoryPerformanceTest {
         val documentList = mutableListOf<Document>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id,
                 status = AnalyzeStep.PREPARED
             )
@@ -150,30 +150,30 @@ class RestaurantMetadataRepositoryPerformanceTest {
         val collection = database.getCollection<Document>(COLLECTION_NAME)
 
         val id = "restaurant-1"
-        val metadata = RestaurantMetadata(id = id, status = AnalyzeStep.PREPARED)
+        val metadata = Metadata(id = id, status = AnalyzeStep.PREPARED)
         repository.insert(metadata)
         insertedIds.add(id)
 
-        val filter = eq(RestaurantMetadata::id.name, metadata.id)
+        val filter = eq(Metadata::id.name, metadata.id)
         val update = combine(
-            set(RestaurantMetadata::status.name, metadata.status),
-            set(RestaurantMetadata::source.name, metadata.source),
-            set(RestaurantMetadata::name.name, metadata.name),
-            set(RestaurantMetadata::category.name, metadata.category),
-            set(RestaurantMetadata::phone.name, metadata.phone),
-            set(RestaurantMetadata::address.name, metadata.address),
-            set(RestaurantMetadata::x.name, metadata.x),
-            set(RestaurantMetadata::y.name, metadata.y),
-            set(RestaurantMetadata::reviews.name, metadata.reviews),
-            set(RestaurantMetadata::businessDays.name, metadata.businessDays),
-            set(RestaurantMetadata::url.name, metadata.url),
-            set(RestaurantMetadata::hasWifi.name, metadata.hasWifi),
-            set(RestaurantMetadata::hasParking.name, metadata.hasParking),
-            set(RestaurantMetadata::menus.name, metadata.menus),
-            set(RestaurantMetadata::minPrice.name, metadata.minPrice),
-            set(RestaurantMetadata::maxPrice.name, metadata.maxPrice),
-            set(RestaurantMetadata::mood.name, metadata.mood),
-            set(RestaurantMetadata::taste.name, metadata.taste)
+            set(Metadata::status.name, metadata.status),
+            set(Metadata::source.name, metadata.source),
+            set(Metadata::name.name, metadata.name),
+            set(Metadata::category.name, metadata.category),
+            set(Metadata::phone.name, metadata.phone),
+            set(Metadata::address.name, metadata.address),
+            set(Metadata::x.name, metadata.x),
+            set(Metadata::y.name, metadata.y),
+            set(Metadata::reviews.name, metadata.reviews),
+            set(Metadata::businessDays.name, metadata.businessDays),
+            set(Metadata::url.name, metadata.url),
+            set(Metadata::hasWifi.name, metadata.hasWifi),
+            set(Metadata::hasParking.name, metadata.hasParking),
+            set(Metadata::menus.name, metadata.menus),
+            set(Metadata::minPrice.name, metadata.minPrice),
+            set(Metadata::maxPrice.name, metadata.maxPrice),
+            set(Metadata::mood.name, metadata.mood),
+            set(Metadata::taste.name, metadata.taste)
         )
 
         val elapsed = measureTimeMillis {
@@ -188,10 +188,10 @@ class RestaurantMetadataRepositoryPerformanceTest {
         val collection = database.getCollection<Document>(COLLECTION_NAME)
 
         val idList = mutableListOf<String>()
-        val metadataList = mutableListOf<RestaurantMetadata>()
+        val metadataList = mutableListOf<Metadata>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id,
                 status = AnalyzeStep.PREPARED
             )
@@ -202,26 +202,26 @@ class RestaurantMetadataRepositoryPerformanceTest {
         insertedIds.addAll(idList)
 
         val updates = metadataList.map { metadata ->
-            val filter = eq(RestaurantMetadata::id.name, metadata.id)
+            val filter = eq(Metadata::id.name, metadata.id)
             val update = combine(
-                set(RestaurantMetadata::status.name, metadata.status),
-                set(RestaurantMetadata::source.name, metadata.source),
-                set(RestaurantMetadata::name.name, metadata.name),
-                set(RestaurantMetadata::category.name, metadata.category),
-                set(RestaurantMetadata::phone.name, metadata.phone),
-                set(RestaurantMetadata::address.name, metadata.address),
-                set(RestaurantMetadata::x.name, metadata.x),
-                set(RestaurantMetadata::y.name, metadata.y),
-                set(RestaurantMetadata::reviews.name, metadata.reviews),
-                set(RestaurantMetadata::businessDays.name, metadata.businessDays),
-                set(RestaurantMetadata::url.name, metadata.url),
-                set(RestaurantMetadata::hasWifi.name, metadata.hasWifi),
-                set(RestaurantMetadata::hasParking.name, metadata.hasParking),
-                set(RestaurantMetadata::menus.name, metadata.menus),
-                set(RestaurantMetadata::minPrice.name, metadata.minPrice),
-                set(RestaurantMetadata::maxPrice.name, metadata.maxPrice),
-                set(RestaurantMetadata::mood.name, metadata.mood),
-                set(RestaurantMetadata::taste.name, metadata.taste)
+                set(Metadata::status.name, metadata.status),
+                set(Metadata::source.name, metadata.source),
+                set(Metadata::name.name, metadata.name),
+                set(Metadata::category.name, metadata.category),
+                set(Metadata::phone.name, metadata.phone),
+                set(Metadata::address.name, metadata.address),
+                set(Metadata::x.name, metadata.x),
+                set(Metadata::y.name, metadata.y),
+                set(Metadata::reviews.name, metadata.reviews),
+                set(Metadata::businessDays.name, metadata.businessDays),
+                set(Metadata::url.name, metadata.url),
+                set(Metadata::hasWifi.name, metadata.hasWifi),
+                set(Metadata::hasParking.name, metadata.hasParking),
+                set(Metadata::menus.name, metadata.menus),
+                set(Metadata::minPrice.name, metadata.minPrice),
+                set(Metadata::maxPrice.name, metadata.maxPrice),
+                set(Metadata::mood.name, metadata.mood),
+                set(Metadata::taste.name, metadata.taste)
             )
             UpdateOneModel<Document>(filter, update)
         }
@@ -238,11 +238,11 @@ class RestaurantMetadataRepositoryPerformanceTest {
         val collection = database.getCollection<Document>(COLLECTION_NAME)
 
         val id = "restaurant-1"
-        val metadata = RestaurantMetadata(id = id, status = AnalyzeStep.PREPARED)
+        val metadata = Metadata(id = id, status = AnalyzeStep.PREPARED)
         repository.insert(metadata)
         insertedIds.add(id)
 
-        val filter = eq(RestaurantMetadata::id.name, id)
+        val filter = eq(Metadata::id.name, id)
 
         val elapsed = measureTimeMillis {
             collection.deleteOne(filter)
@@ -256,10 +256,10 @@ class RestaurantMetadataRepositoryPerformanceTest {
         val collection = database.getCollection<Document>(COLLECTION_NAME)
 
         val idList = mutableListOf<String>()
-        val metadataList = mutableListOf<RestaurantMetadata>()
+        val metadataList = mutableListOf<Metadata>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id,
                 status = AnalyzeStep.PREPARED
             )
@@ -270,7 +270,7 @@ class RestaurantMetadataRepositoryPerformanceTest {
         insertedIds.addAll(idList)
 
         val deletes = idList.map { id ->
-            val filter = eq(RestaurantMetadata::id.name, id)
+            val filter = eq(Metadata::id.name, id)
             DeleteOneModel<Document>(filter)
         }
 
@@ -283,10 +283,10 @@ class RestaurantMetadataRepositoryPerformanceTest {
     @Test
     fun `repository get performance test`() = runBlocking {
         val idList = mutableListOf<String>()
-        val metadataList = mutableListOf<RestaurantMetadata>()
+        val metadataList = mutableListOf<Metadata>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id,
                 status = AnalyzeStep.PREPARED
             )
@@ -305,10 +305,10 @@ class RestaurantMetadataRepositoryPerformanceTest {
     @Test
     fun `repository insert performance test`() = runBlocking {
         val idList = mutableListOf<String>()
-        val metadataList = mutableListOf<RestaurantMetadata>()
+        val metadataList = mutableListOf<Metadata>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id,
                 status = AnalyzeStep.PREPARED
             )
@@ -326,10 +326,10 @@ class RestaurantMetadataRepositoryPerformanceTest {
     @Test
     fun `repository update performance test`() = runBlocking {
         val idList = mutableListOf<String>()
-        val metadataList = mutableListOf<RestaurantMetadata>()
+        val metadataList = mutableListOf<Metadata>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id,
                 status = AnalyzeStep.PREPARED
             )
@@ -348,10 +348,10 @@ class RestaurantMetadataRepositoryPerformanceTest {
     @Test
     fun `repository delete performance test`() = runBlocking {
         val idList = mutableListOf<String>()
-        val metadataList = mutableListOf<RestaurantMetadata>()
+        val metadataList = mutableListOf<Metadata>()
         for(i in 0..entitySize) {
             val id = "Restaurant-$i"
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id,
                 status = AnalyzeStep.PREPARED
             )

@@ -3,7 +3,7 @@ package com.tastecompass.domain.entity
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 
-data class RestaurantEmbedding(
+data class Embedding(
     val id: String,
     val category: String = RestaurantProperty.CATEGORY.defaultValue as String,
     val address: String = RestaurantProperty.ADDRESS.defaultValue as String,
@@ -18,7 +18,7 @@ data class RestaurantEmbedding(
     val tasteVector: List<Float> = RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>,
 ) {
     constructor(
-        metadata: RestaurantMetadata, moodVector: List<Float>?, tasteVector: List<Float>?
+        metadata: Metadata, moodVector: List<Float>?, tasteVector: List<Float>?
     ) : this(
         id = metadata.id, category = metadata.category, address = metadata.address,
         x = metadata.x, y = metadata.y, businessDays = metadata.businessDays,
@@ -40,7 +40,7 @@ data class RestaurantEmbedding(
         maxPrice: Int? = null,
         moodVector: List<Float>? = null,
         tasteVector: List<Float>? = null
-    ): RestaurantEmbedding {
+    ): Embedding {
         return copy(
             category = category ?: this.category,
             address = address ?: this.address,
@@ -78,8 +78,8 @@ data class RestaurantEmbedding(
     }
 
     companion object {
-        fun fromMap(map: Map<String, Any>): RestaurantEmbedding {
-            return RestaurantEmbedding(
+        fun fromMap(map: Map<String, Any>): Embedding {
+            return Embedding(
                 id = map[RestaurantProperty.ID.key] as String,
                 category = map[RestaurantProperty.CATEGORY.key] as? String ?: RestaurantProperty.CATEGORY.defaultValue as String,
                 address = map[RestaurantProperty.ADDRESS.key] as? String ?: RestaurantProperty.ADDRESS.defaultValue as String,

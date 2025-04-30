@@ -1,6 +1,6 @@
 package com.tastecompass.data.repository.milvus
 
-import com.tastecompass.domain.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.Embedding
 import com.tastecompass.data.exception.DataAccessException
 import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException
@@ -14,9 +14,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 
 @Repository
-class RestaurantEmbeddingRepository(
+class EmbeddingRepository(
     private val milvusClient: MilvusClientV2
-): MilvusRepository<RestaurantEmbedding> {
+): MilvusRepository<Embedding> {
 
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
@@ -24,7 +24,7 @@ class RestaurantEmbeddingRepository(
         fieldName: String,
         topK: Int,
         vector: List<Float>,
-    ): List<RestaurantEmbedding> = coroutineScope {
+    ): List<Embedding> = coroutineScope {
         val vectorData = listOf(FloatVec(vector))
         val searchReq = SearchReq.builder()
             .collectionName(COLLECTION_NAME).annsField(fieldName)
@@ -34,7 +34,7 @@ class RestaurantEmbeddingRepository(
             try {
                 val searchResp = milvusClient.search(searchReq)
                 val searchResult = searchResp.searchResults.first()
-                val entityList = searchResult.map { RestaurantEmbedding.fromMap(it.entity) }
+                val entityList = searchResult.map { Embedding.fromMap(it.entity) }
                 logger.debug("Searched restaurant embedding (field: $fieldName, topK: $topK)")
 
                 entityList
@@ -49,7 +49,7 @@ class RestaurantEmbeddingRepository(
     }
 
     override suspend fun insert(
-        entity: RestaurantEmbedding
+        entity: Embedding
     ): Unit = coroutineScope {
         val existingIdList = existingIds(listOf(entity.id))
         if(entity.id in existingIdList)
@@ -79,7 +79,7 @@ class RestaurantEmbeddingRepository(
     }
 
     override suspend fun insert(
-        entityList: List<RestaurantEmbedding>,
+        entityList: List<Embedding>,
         batchSize: Int
     ): Unit = coroutineScope {
         val insertRespListDeferred = entityList.chunked(batchSize).mapIndexed { idx, batch ->
@@ -115,7 +115,7 @@ class RestaurantEmbeddingRepository(
     }
 
     override suspend fun upsert(
-        entity: RestaurantEmbedding
+        entity: Embedding
     ): Unit = coroutineScope {
         val dataList = listOf(entity.toJsonObject())
         val upsertReq = UpsertReq.builder()
@@ -139,7 +139,7 @@ class RestaurantEmbeddingRepository(
     }
 
     override suspend fun upsert(
-        entityList: List<RestaurantEmbedding>,
+        entityList: List<Embedding>,
         batchSize: Int
     ): Unit = coroutineScope {
         val upsertRespListDeferred = entityList.chunked(batchSize).mapIndexed { idx, batch ->
@@ -220,7 +220,7 @@ class RestaurantEmbeddingRepository(
 
     override suspend fun get(
         id: String
-    ): RestaurantEmbedding = coroutineScope {
+    ): Embedding = coroutineScope {
         val idList = listOf(id)
         val getReq = GetReq.builder()
             .collectionName(COLLECTION_NAME)
@@ -237,7 +237,7 @@ class RestaurantEmbeddingRepository(
                     throw EntityNotFoundException.restaurantEmbeddingNotFound(id)
                 }
 
-                val entity = RestaurantEmbedding.fromMap(getResults.first().entity)
+                val entity = Embedding.fromMap(getResults.first().entity)
                 logger.debug("Get restaurant embedding $id")
 
                 entity
@@ -254,7 +254,7 @@ class RestaurantEmbeddingRepository(
     override suspend fun get(
         idList: List<String>,
         batchSize: Int
-    ): List<RestaurantEmbedding> = coroutineScope {
+    ): List<Embedding> = coroutineScope {
         val entityListDeferred = idList.chunked(batchSize).mapIndexed { idx, batch ->
             val getReq = GetReq.builder()
                 .collectionName(COLLECTION_NAME)
@@ -265,7 +265,7 @@ class RestaurantEmbeddingRepository(
                 try {
                     val getResp = milvusClient.get(getReq)
                     val getResults = getResp.getResults
-                    val entityList = getResults.map { RestaurantEmbedding.fromMap(it.entity) }
+                    val entityList = getResults.map { Embedding.fromMap(it.entity) }
                     logger.debug("Get restaurant embedding: ${getResults.size}/${batch.size} (batch $idx)")
 
                     idx to entityList
@@ -282,7 +282,7 @@ class RestaurantEmbeddingRepository(
             .flatMap { it.second }
     }
 
-    override suspend fun getAll(): List<RestaurantEmbedding> = coroutineScope {
+    override suspend fun getAll(): List<Embedding> = coroutineScope {
         val queryReq = QueryReq.builder()
             .collectionName(COLLECTION_NAME).filter("id != \"\"").build()
 
@@ -290,7 +290,7 @@ class RestaurantEmbeddingRepository(
             try {
                 val queryResp = milvusClient.query(queryReq)
                 val queryResults = queryResp.queryResults
-                val entityList = queryResults.map { RestaurantEmbedding.fromMap(it.entity) }
+                val entityList = queryResults.map { Embedding.fromMap(it.entity) }
                 logger.debug("Get all restaurant embedding")
 
                 entityList

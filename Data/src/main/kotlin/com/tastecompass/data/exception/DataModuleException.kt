@@ -1,8 +1,8 @@
 package com.tastecompass.data.exception
 
 import com.tastecompass.domain.entity.Restaurant
-import com.tastecompass.domain.entity.RestaurantEmbedding
-import com.tastecompass.domain.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.Embedding
+import com.tastecompass.domain.entity.Metadata
 
 sealed class DataModuleException(message: String): RuntimeException(message)
 
@@ -36,28 +36,20 @@ class EntityNotFoundException(message: String): DataModuleException(message) {
 
 class InvalidRequestException(message: String): DataModuleException(message) {
     companion object {
-        fun invalidInsertState(): InvalidRequestException {
-            return InvalidRequestException("Only PREPARED restaurants can be inserted.")
-        }
-        fun invalidInsertState(restaurant: Restaurant): InvalidRequestException {
-            return InvalidRequestException("Only PREPARED restaurants can be inserted. Given status: ${restaurant.status}")
-        }
-
-        fun invalidUpdateState(): InvalidRequestException {
-            return InvalidRequestException("ANALYZED, EMBEDDED restaurants can be inserted.")
-        }
-        fun invalidUpdateState(restaurant: Restaurant): InvalidRequestException {
-            return InvalidRequestException("ANALYZED, EMBEDDED restaurants can be inserted. Given status: ${restaurant.status}")
+        fun invalidSaveState(restaurant: Restaurant): InvalidRequestException {
+            return InvalidRequestException(
+                "Only EMBEDDED restaurants can be saved. The restaurant's status is ${restaurant.status}"
+            )
         }
 
         fun duplicateKey(restaurant: Restaurant): InvalidRequestException {
             return InvalidRequestException("Restaurant with id ${restaurant.id} already exists.")
         }
-        fun duplicateKey(restaurantEmbedding: RestaurantEmbedding): InvalidRequestException {
-            return InvalidRequestException("Restaurant embedding with id ${restaurantEmbedding.id} already exists.")
+        fun duplicateKey(embedding: Embedding): InvalidRequestException {
+            return InvalidRequestException("Restaurant embedding with id ${embedding.id} already exists.")
         }
-        fun duplicateKey(restaurantMetadata: RestaurantMetadata): InvalidRequestException {
-            return InvalidRequestException("Restaurant metadata with id ${restaurantMetadata.id} already exists.")
+        fun duplicateKey(metadata: Metadata): InvalidRequestException {
+            return InvalidRequestException("Restaurant metadata with id ${metadata.id} already exists.")
         }
     }
 }

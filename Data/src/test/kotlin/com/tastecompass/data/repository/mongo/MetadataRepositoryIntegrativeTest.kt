@@ -1,15 +1,13 @@
 package com.tastecompass.data.repository.mongo
 
-import com.mongodb.kotlin.client.MongoClient
 import com.tastecompass.domain.common.AnalyzeStep
 import com.tastecompass.data.config.MongoConfig
-import com.tastecompass.domain.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.Metadata
 import com.tastecompass.domain.entity.RestaurantProperty
 import com.tastecompass.data.exception.EntityNotFoundException
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -18,12 +16,12 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes=[MongoConfig::class, RestaurantMetadataRepository::class])
+@ContextConfiguration(classes=[MongoConfig::class, MetadataRepository::class])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class RestaurantMetadataRepositoryIntegrativeTest {
+class MetadataRepositoryIntegrativeTest {
 
     @Autowired
-    private lateinit var metadataRepository: RestaurantMetadataRepository
+    private lateinit var metadataRepository: MetadataRepository
 
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
@@ -33,12 +31,12 @@ class RestaurantMetadataRepositoryIntegrativeTest {
 
     @BeforeEach
     fun setup(): Unit = runBlocking {
-        val metadata1 = RestaurantMetadata(
+        val metadata1 = Metadata(
             id = testId1,
             status = AnalyzeStep.PREPARED,
             name = "name-1"
         )
-        val metadata2 = RestaurantMetadata(
+        val metadata2 = Metadata(
             id = testId2,
             status = AnalyzeStep.PREPARED,
             name = "name-2"
@@ -95,14 +93,14 @@ class RestaurantMetadataRepositoryIntegrativeTest {
     @Test
     fun `should insert new data`() = runBlocking {
         val newTestId = "test-new"
-        val newRestaurantMetadata = RestaurantMetadata(
+        val newMetadata = Metadata(
             id = newTestId,
             name = "name-new",
             mood = "mood-new",
             status = AnalyzeStep.PREPARED
         )
 
-        metadataRepository.insert(listOf(newRestaurantMetadata))
+        metadataRepository.insert(listOf(newMetadata))
         insertedIds.add(newTestId)
 
         val result = metadataRepository.get(listOf(newTestId))
@@ -111,25 +109,51 @@ class RestaurantMetadataRepositoryIntegrativeTest {
 
     @Test
     fun `should update present data`() = runBlocking {
-        val updatedRestaurantMetadata1 = RestaurantMetadata(
+        val updatedMetadata1 = Metadata(
             id = testId1,
             name = "name-updated1",
             mood = "mood-updated1",
             status = AnalyzeStep.ANALYZED
         )
-        val updatedRestaurantMetadata2 = RestaurantMetadata(
-            id = testId2,
-            name = "name-updated2",
-            mood = "mood-updated2",
+
+        metadataRepository.update(updatedMetadata1)
+
+        val result = metadataRepository.get(testId1)
+
+        assertEquals("name-updated1", result.name)
+    }
+
+    @Test
+    fun `should upsert new data`() = runBlocking {
+        val newTestId = "test-new"
+        val newMetadata = Metadata(
+            id = newTestId,
+            name = "name-new",
+            mood = "mood-new",
+            status = AnalyzeStep.PREPARED
+        )
+
+        metadataRepository.upsert(listOf(newMetadata))
+        insertedIds.add(newTestId)
+
+        val result = metadataRepository.get(listOf(newTestId))
+        assertEquals("test-new", result.first().id)
+    }
+
+    @Test
+    fun `should upsert present data`() = runBlocking {
+        val updatedMetadata1 = Metadata(
+            id = testId1,
+            name = "name-updated1",
+            mood = "mood-updated1",
             status = AnalyzeStep.ANALYZED
         )
 
-        metadataRepository.update(listOf(updatedRestaurantMetadata1, updatedRestaurantMetadata2))
+        metadataRepository.upsert(updatedMetadata1)
 
-        val result = metadataRepository.get(listOf(testId1, testId2))
+        val result = metadataRepository.get(testId1)
 
-        assertEquals("name-updated1", result[0].name)
-        assertEquals("name-updated2", result[1].name)
+        assertEquals("name-updated1", result.name)
     }
 
     @Test

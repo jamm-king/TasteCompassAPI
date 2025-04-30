@@ -3,7 +3,7 @@ package com.tastecompass.domain.entity
 import com.tastecompass.domain.common.AnalyzeStep
 import org.bson.Document
 
-data class RestaurantMetadata(
+data class Metadata(
     val id: String,
     val status: AnalyzeStep,
     val source: String = RestaurantProperty.SOURCE.defaultValue as String,
@@ -43,7 +43,7 @@ data class RestaurantMetadata(
         maxPrice: Int? = null,
         mood: String? = null,
         taste: String? = null,
-    ): RestaurantMetadata {
+    ): Metadata {
         return copy(
             status = status ?: this.status,
             source = source ?: this.source,
@@ -91,8 +91,8 @@ data class RestaurantMetadata(
     }
 
     companion object {
-        fun fromDocument(document: Document): RestaurantMetadata {
-            return RestaurantMetadata(
+        fun fromDocument(document: Document): Metadata {
+            return Metadata(
                 id = document["id"] as String,
                 status = AnalyzeStep.valueOf(document.getString("status")),
                 source = document["source"] as? String ?: RestaurantProperty.SOURCE.defaultValue as String,
