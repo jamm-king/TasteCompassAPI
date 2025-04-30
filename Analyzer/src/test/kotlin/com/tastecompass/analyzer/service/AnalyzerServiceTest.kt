@@ -1,5 +1,6 @@
 package com.tastecompass.analyzer.service
 
+import com.tastecompass.domain.entity.Review
 import com.tastecompass.openai.client.OpenAIClientWrapperImpl
 import com.tastecompass.openai.config.OpenAIConfig
 import kotlinx.coroutines.runBlocking
@@ -20,7 +21,7 @@ class AnalyzerServiceTest {
     lateinit var analyzerService: AnalyzerService
 
     private val logger = LoggerFactory.getLogger(this::class.simpleName)
-    private val review = """
+    private val text = """
         수원 영통 맛집 탑3 안에 들지 않을까 싶은,,
         진심 존맛 카이센동을 판매하는, 내 최애 식당인
         ‘좋은소식’
@@ -116,6 +117,11 @@ class AnalyzerServiceTest {
 
     @Test
     fun `should extract attributes from review`() = runBlocking {
+        val review = Review(
+            source = "tistory",
+            url = "tistory.com",
+            text = text
+        )
         val json = analyzerService.analyze(review)
         logger.info(json.toString())
     }
