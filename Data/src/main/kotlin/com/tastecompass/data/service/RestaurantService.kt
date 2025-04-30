@@ -48,6 +48,16 @@ class RestaurantService(
 
     }
 
+    override suspend fun getByName(name: String): Restaurant {
+        val metadata = mongoRepository.getByName(name)
+        val embedding = milvusRepository.get(metadata.id)
+
+        return Restaurant(
+            metadata = metadata,
+            embedding = embedding
+        )
+    }
+
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.simpleName)
     }
