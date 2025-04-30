@@ -7,10 +7,11 @@ import com.mongodb.client.model.DeleteOneModel
 import com.mongodb.client.model.Filters.*
 import com.mongodb.client.model.InsertManyOptions
 import com.mongodb.client.model.UpdateOneModel
+import com.mongodb.client.model.UpdateOptions
 import com.mongodb.client.model.Updates.combine
 import com.mongodb.client.model.Updates.set
 import com.mongodb.kotlin.client.MongoClient
-import com.tastecompass.domain.entity.RestaurantMetadata
+import com.tastecompass.domain.entity.Metadata
 import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException
 import kotlinx.coroutines.*
@@ -20,9 +21,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 
 @Repository
-class RestaurantMetadataRepository(
+class MetadataRepository(
     private val mongoClient: MongoClient
-): MongoRepository<RestaurantMetadata> {
+): MongoRepository<Metadata> {
 
     private val database = mongoClient.getDatabase(DATABASE_NAME)
     private val collection = database.getCollection<Document>(COLLECTION_NAME)
@@ -30,7 +31,7 @@ class RestaurantMetadataRepository(
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     override suspend fun insert(
-        entity: RestaurantMetadata
+        entity: Metadata
     ): Unit = coroutineScope {
         val document = entity.toDocument()
 
@@ -55,7 +56,7 @@ class RestaurantMetadataRepository(
     }
 
     override suspend fun insert(
-        entityList: List<RestaurantMetadata>,
+        entityList: List<Metadata>,
         batchSize: Int
     ): Unit = coroutineScope {
         val jobs = entityList.chunked(batchSize)
@@ -83,28 +84,28 @@ class RestaurantMetadataRepository(
     }
 
     override suspend fun update(
-        entity: RestaurantMetadata
+        entity: Metadata
     ): Unit = coroutineScope {
-        val filter = eq(RestaurantMetadata::id.name, entity.id)
+        val filter = eq(Metadata::id.name, entity.id)
         val update = combine(
-            set(RestaurantMetadata::status.name, entity.status),
-            set(RestaurantMetadata::source.name, entity.source),
-            set(RestaurantMetadata::name.name, entity.name),
-            set(RestaurantMetadata::category.name, entity.category),
-            set(RestaurantMetadata::phone.name, entity.phone),
-            set(RestaurantMetadata::address.name, entity.address),
-            set(RestaurantMetadata::x.name, entity.x),
-            set(RestaurantMetadata::y.name, entity.y),
-            set(RestaurantMetadata::reviews.name, entity.reviews),
-            set(RestaurantMetadata::businessDays.name, entity.businessDays),
-            set(RestaurantMetadata::url.name, entity.url),
-            set(RestaurantMetadata::hasWifi.name, entity.hasWifi),
-            set(RestaurantMetadata::hasParking.name, entity.hasParking),
-            set(RestaurantMetadata::menus.name, entity.menus),
-            set(RestaurantMetadata::minPrice.name, entity.minPrice),
-            set(RestaurantMetadata::maxPrice.name, entity.maxPrice),
-            set(RestaurantMetadata::mood.name, entity.mood),
-            set(RestaurantMetadata::taste.name, entity.taste)
+            set(Metadata::status.name, entity.status),
+            set(Metadata::source.name, entity.source),
+            set(Metadata::name.name, entity.name),
+            set(Metadata::category.name, entity.category),
+            set(Metadata::phone.name, entity.phone),
+            set(Metadata::address.name, entity.address),
+            set(Metadata::x.name, entity.x),
+            set(Metadata::y.name, entity.y),
+            set(Metadata::reviews.name, entity.reviews),
+            set(Metadata::businessDays.name, entity.businessDays),
+            set(Metadata::url.name, entity.url),
+            set(Metadata::hasWifi.name, entity.hasWifi),
+            set(Metadata::hasParking.name, entity.hasParking),
+            set(Metadata::menus.name, entity.menus),
+            set(Metadata::minPrice.name, entity.minPrice),
+            set(Metadata::maxPrice.name, entity.maxPrice),
+            set(Metadata::mood.name, entity.mood),
+            set(Metadata::taste.name, entity.taste)
         )
 
         val job = launch {
@@ -122,32 +123,32 @@ class RestaurantMetadataRepository(
     }
 
     override suspend fun update(
-        entityList: List<RestaurantMetadata>,
+        entityList: List<Metadata>,
         batchSize: Int
     ): Unit = coroutineScope {
         val jobs = entityList.chunked(batchSize)
             .mapIndexed { idx, batch ->
                 val updates = batch.map { entity ->
-                    val filter = eq(RestaurantMetadata::id.name, entity.id)
+                    val filter = eq(Metadata::id.name, entity.id)
                     val update = combine(
-                        set(RestaurantMetadata::status.name, entity.status),
-                        set(RestaurantMetadata::source.name, entity.source),
-                        set(RestaurantMetadata::name.name, entity.name),
-                        set(RestaurantMetadata::category.name, entity.category),
-                        set(RestaurantMetadata::phone.name, entity.phone),
-                        set(RestaurantMetadata::address.name, entity.address),
-                        set(RestaurantMetadata::x.name, entity.x),
-                        set(RestaurantMetadata::y.name, entity.y),
-                        set(RestaurantMetadata::reviews.name, entity.reviews),
-                        set(RestaurantMetadata::businessDays.name, entity.businessDays),
-                        set(RestaurantMetadata::url.name, entity.url),
-                        set(RestaurantMetadata::hasWifi.name, entity.hasWifi),
-                        set(RestaurantMetadata::hasParking.name, entity.hasParking),
-                        set(RestaurantMetadata::menus.name, entity.menus),
-                        set(RestaurantMetadata::minPrice.name, entity.minPrice),
-                        set(RestaurantMetadata::maxPrice.name, entity.maxPrice),
-                        set(RestaurantMetadata::mood.name, entity.mood),
-                        set(RestaurantMetadata::taste.name, entity.taste)
+                        set(Metadata::status.name, entity.status),
+                        set(Metadata::source.name, entity.source),
+                        set(Metadata::name.name, entity.name),
+                        set(Metadata::category.name, entity.category),
+                        set(Metadata::phone.name, entity.phone),
+                        set(Metadata::address.name, entity.address),
+                        set(Metadata::x.name, entity.x),
+                        set(Metadata::y.name, entity.y),
+                        set(Metadata::reviews.name, entity.reviews),
+                        set(Metadata::businessDays.name, entity.businessDays),
+                        set(Metadata::url.name, entity.url),
+                        set(Metadata::hasWifi.name, entity.hasWifi),
+                        set(Metadata::hasParking.name, entity.hasParking),
+                        set(Metadata::menus.name, entity.menus),
+                        set(Metadata::minPrice.name, entity.minPrice),
+                        set(Metadata::maxPrice.name, entity.maxPrice),
+                        set(Metadata::mood.name, entity.mood),
+                        set(Metadata::taste.name, entity.taste)
                     )
                     UpdateOneModel<Document>(filter, update)
                 }
@@ -167,10 +168,95 @@ class RestaurantMetadataRepository(
         jobs.joinAll()
     }
 
+    override suspend fun upsert(entity: Metadata): Unit = coroutineScope {
+        val filter = eq(Metadata::id.name, entity.id)
+        val update = combine(
+            set(Metadata::status.name, entity.status),
+            set(Metadata::source.name, entity.source),
+            set(Metadata::name.name, entity.name),
+            set(Metadata::category.name, entity.category),
+            set(Metadata::phone.name, entity.phone),
+            set(Metadata::address.name, entity.address),
+            set(Metadata::x.name, entity.x),
+            set(Metadata::y.name, entity.y),
+            set(Metadata::reviews.name, entity.reviews),
+            set(Metadata::businessDays.name, entity.businessDays),
+            set(Metadata::url.name, entity.url),
+            set(Metadata::hasWifi.name, entity.hasWifi),
+            set(Metadata::hasParking.name, entity.hasParking),
+            set(Metadata::menus.name, entity.menus),
+            set(Metadata::minPrice.name, entity.minPrice),
+            set(Metadata::maxPrice.name, entity.maxPrice),
+            set(Metadata::mood.name, entity.mood),
+            set(Metadata::taste.name, entity.taste)
+        )
+
+        val job = launch {
+            try {
+                val result = collection.updateOne(filter, update, UpdateOptions().upsert(true))
+                logger.debug("Upserted restaurant metadata ${entity.id}")
+            } catch (e: Exception) {
+                logger.error("Failed to upsert restaurant metadata ${entity.id}: ${e.message}")
+                throw e
+            }
+        }
+
+        job.join()
+    }
+
+
+    override suspend fun upsert(entityList: List<Metadata>, batchSize: Int): Unit = coroutineScope {
+        val jobs = entityList.chunked(batchSize)
+            .mapIndexed { idx, batch ->
+                val updates = batch.map { entity ->
+                    val filter = eq(Metadata::id.name, entity.id)
+                    val update = combine(
+                        set(Metadata::status.name, entity.status),
+                        set(Metadata::source.name, entity.source),
+                        set(Metadata::name.name, entity.name),
+                        set(Metadata::category.name, entity.category),
+                        set(Metadata::phone.name, entity.phone),
+                        set(Metadata::address.name, entity.address),
+                        set(Metadata::x.name, entity.x),
+                        set(Metadata::y.name, entity.y),
+                        set(Metadata::reviews.name, entity.reviews),
+                        set(Metadata::businessDays.name, entity.businessDays),
+                        set(Metadata::url.name, entity.url),
+                        set(Metadata::hasWifi.name, entity.hasWifi),
+                        set(Metadata::hasParking.name, entity.hasParking),
+                        set(Metadata::menus.name, entity.menus),
+                        set(Metadata::minPrice.name, entity.minPrice),
+                        set(Metadata::maxPrice.name, entity.maxPrice),
+                        set(Metadata::mood.name, entity.mood),
+                        set(Metadata::taste.name, entity.taste)
+                    )
+
+                    UpdateOneModel<Document>(
+                        filter,
+                        update,
+                        UpdateOptions().upsert(true)
+                    )
+                }
+
+                launch {
+                    try {
+                        val bulkWriteResult = collection.bulkWrite(updates)
+                        logger.debug("Upserted restaurant metadata: ${bulkWriteResult.modifiedCount + bulkWriteResult.upserts.size}/${batch.size} (batch $idx)")
+                    } catch (e: Exception) {
+                        logger.error("Failed to upsert restaurant metadata (batch $idx): ${e.message}")
+                        throw e
+                    }
+                }
+            }
+
+        jobs.joinAll()
+    }
+
+
     override suspend fun delete(
         id: String
     ): Unit = coroutineScope {
-        val filter = eq(RestaurantMetadata::id.name, id)
+        val filter = eq(Metadata::id.name, id)
 
         val job = launch {
             try {
@@ -193,7 +279,7 @@ class RestaurantMetadataRepository(
         val jobs = idList.chunked(batchSize)
             .mapIndexed { idx, batch ->
                 val deletes = batch.map { id ->
-                    val filter = eq(RestaurantMetadata::id.name, id)
+                    val filter = eq(Metadata::id.name, id)
                     DeleteOneModel<Document>(filter)
                 }
 
@@ -216,15 +302,15 @@ class RestaurantMetadataRepository(
 
     override suspend fun get(
         id: String
-    ): RestaurantMetadata = coroutineScope {
-        val filter = eq(RestaurantMetadata::id.name, id)
+    ): Metadata = coroutineScope {
+        val filter = eq(Metadata::id.name, id)
 
         val entityDeferred = async {
             try {
                 val document = collection.find(filter).first()
                 logger.debug("Get restaurant metadata $id")
 
-                RestaurantMetadata.fromDocument(document)
+                Metadata.fromDocument(document)
             } catch (e: MongoClientException) {
                 logger.error("Failed to get restaurant metadata $id: ${e.message}")
 
@@ -238,10 +324,10 @@ class RestaurantMetadataRepository(
     override suspend fun get(
         idList: List<String>,
         batchSize: Int
-    ): List<RestaurantMetadata> = coroutineScope {
+    ): List<Metadata> = coroutineScope {
         val entityListDeferred = idList.chunked(batchSize)
             .mapIndexed { idx, batch ->
-                val filter = `in`(RestaurantMetadata::id.name, batch)
+                val filter = `in`(Metadata::id.name, batch)
 
                 async {
                     try {
@@ -249,7 +335,7 @@ class RestaurantMetadataRepository(
                         logger.debug("Get restaurant metadata: ${getResult.size}/${batch.size} (batch $idx)")
 
                         idx to getResult.map { document ->
-                            RestaurantMetadata.fromDocument(document)
+                            Metadata.fromDocument(document)
                         }
                     } catch(e: Exception) {
                         logger.error("Failed to get restaurant metadata (batch $idx): ${e.message}")
@@ -264,14 +350,14 @@ class RestaurantMetadataRepository(
             .flatMap { it.second }
     }
 
-    override suspend fun getAll(): List<RestaurantMetadata> = coroutineScope {
+    override suspend fun getAll(): List<Metadata> = coroutineScope {
         val entityListDeferred = async {
             try {
                 val getResults = collection.find().toList()
                 logger.debug("Get all restaurant metadata")
 
                 getResults.map { document ->
-                    RestaurantMetadata.fromDocument(document)
+                    Metadata.fromDocument(document)
                 }
             } catch (e: Exception) {
                 logger.error("Failed get all restaurant metadata: ${e.message}")
@@ -284,7 +370,7 @@ class RestaurantMetadataRepository(
     }
 
     suspend fun exists(id: String) = coroutineScope {
-        val filter = eq(RestaurantMetadata::id.name, id)
+        val filter = eq(Metadata::id.name, id)
 
         val existDeferred = async {
             try {

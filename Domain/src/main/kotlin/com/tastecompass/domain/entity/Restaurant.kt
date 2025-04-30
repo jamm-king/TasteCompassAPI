@@ -4,8 +4,8 @@ import com.tastecompass.domain.common.AnalyzeStep
 import java.util.logging.Logger
 
 data class Restaurant(
-    val metadata: RestaurantMetadata,
-    val embedding: RestaurantEmbedding?,
+    val metadata: Metadata,
+    val embedding: Embedding?,
 ) {
     val id: String
         get() = metadata.id
@@ -101,14 +101,14 @@ data class Restaurant(
             moodVector =  moodVector, tasteVector = tasteVector
         ) ?: if(moodVector != null || tasteVector != null) {
             newMetadata = newMetadata.update(status = AnalyzeStep.EMBEDDED)
-            RestaurantEmbedding(metadata = metadata, moodVector = moodVector, tasteVector = tasteVector)
+            Embedding(metadata = metadata, moodVector = moodVector, tasteVector = tasteVector)
         }
         else null
 
         return copy(metadata = newMetadata, embedding = newEmbedding)
     }
 
-    fun toReadableString(): String {
+    override fun toString(): String {
         return "Restaurant(id=$id, name=${metadata.name}, status=$status)"
     }
 
@@ -117,7 +117,7 @@ data class Restaurant(
     companion object {
         private const val TAG = "Restaurant"
 
-        fun create(metadata: RestaurantMetadata, embedding: RestaurantEmbedding?): Restaurant {
+        fun create(metadata: Metadata, embedding: Embedding?): Restaurant {
             return Restaurant(
                 metadata = metadata,
                 embedding = embedding,
@@ -145,7 +145,7 @@ data class Restaurant(
             mood: String = RestaurantProperty.MOOD.defaultValue as String,
             taste: String = RestaurantProperty.TASTE.defaultValue as String
         ): Restaurant {
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id, status = status, source = source, name = name, category = category,
                 phone = phone, address = address, x = x, y = y, reviews = reviews,
                 businessDays = businessDays, url = url, hasWifi = hasWifi, hasParking = hasParking,
@@ -178,13 +178,13 @@ data class Restaurant(
             moodVector: List<Float> = RestaurantProperty.MOOD_VECTOR.defaultValue as List<Float>,
             tasteVector: List<Float> = RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>
         ): Restaurant {
-            val metadata = RestaurantMetadata(
+            val metadata = Metadata(
                 id = id, status = status, source = source, name = name, category = category,
                 phone = phone, address = address, x = x, y = y, reviews = reviews,
                 businessDays = businessDays, url = url, hasWifi = hasWifi, hasParking = hasParking,
                 menus = menus, minPrice = minPrice, maxPrice = maxPrice, mood = mood, taste = taste
             )
-            val embedding = RestaurantEmbedding(
+            val embedding = Embedding(
                 metadata = metadata,
                 moodVector = moodVector,
                 tasteVector = tasteVector

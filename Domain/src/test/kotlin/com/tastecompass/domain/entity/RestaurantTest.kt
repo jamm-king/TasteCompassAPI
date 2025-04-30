@@ -1,4 +1,4 @@
-package com.tastecompass.data.entity
+package com.tastecompass.domain.entity
 
 import com.tastecompass.domain.common.AnalyzeStep
 import com.tastecompass.domain.common.Constants

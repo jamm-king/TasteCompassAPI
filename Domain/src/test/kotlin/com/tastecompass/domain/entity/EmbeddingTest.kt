@@ -1,13 +1,11 @@
-package com.tastecompass.data.entity
+package com.tastecompass.domain.entity
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import com.tastecompass.domain.common.Constants
-import com.tastecompass.domain.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.Embedding
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class RestaurantEmbeddingTest {
+class EmbeddingTest {
 
     @Test
     fun `fromMap should return object with given map`() {
@@ -16,7 +14,7 @@ class RestaurantEmbeddingTest {
             put("moodVector", List(Constants.EMBEDDING_SIZE) { 0.2f })
         }
 
-        val embedding = RestaurantEmbedding.fromMap(map)
+        val embedding = Embedding.fromMap(map)
 
         assertEquals("test-1", embedding.id)
         assertEquals(Constants.EMBEDDING_SIZE, embedding.moodVector.size)
@@ -25,7 +23,7 @@ class RestaurantEmbeddingTest {
 
     @Test
     fun `toJsonObject should return JsonObject of entity`() {
-        val embedding = RestaurantEmbedding(
+        val embedding = Embedding(
             id = "test-1",
             moodVector = List(Constants.EMBEDDING_SIZE) { 0.2f }
         )
@@ -39,7 +37,7 @@ class RestaurantEmbeddingTest {
 
     @Test
     fun `update should return newly bounded object with updated data`() {
-        val embedding = RestaurantEmbedding(
+        val embedding = Embedding(
             id = "test-1",
             moodVector = List(Constants.EMBEDDING_SIZE) { 0.2f }
         )

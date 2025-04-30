@@ -2,7 +2,7 @@ package com.tastecompass.data.repository.milvus
 
 import com.tastecompass.domain.common.Constants
 import com.tastecompass.data.config.MilvusConfig
-import com.tastecompass.domain.entity.RestaurantEmbedding
+import com.tastecompass.domain.entity.Embedding
 import com.tastecompass.domain.entity.RestaurantProperty
 import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException
@@ -16,14 +16,14 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.util.logging.Logger
 
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes=[MilvusConfig::class, RestaurantEmbeddingRepository::class])
+@ContextConfiguration(classes=[MilvusConfig::class, EmbeddingRepository::class])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class RestaurantEmbeddingRepositoryIntegrativeTest {
+class EmbeddingRepositoryIntegrativeTest {
 
     @Autowired
-    private lateinit var repository: RestaurantEmbeddingRepository
+    private lateinit var repository: EmbeddingRepository
 
-    private val logger = Logger.getLogger(RestaurantEmbeddingRepositoryIntegrativeTest::class.simpleName)
+    private val logger = Logger.getLogger(EmbeddingRepositoryIntegrativeTest::class.simpleName)
 
     private val insertedIds = mutableListOf<String>()
     private val testId1 = "restaurant-1"
@@ -32,11 +32,11 @@ class RestaurantEmbeddingRepositoryIntegrativeTest {
 
     @BeforeEach
     fun setup(): Unit = runBlocking {
-        val embedding1 = RestaurantEmbedding(
+        val embedding1 = Embedding(
             id = testId1,
             moodVector = List(Constants.EMBEDDING_SIZE) { 0.2f }
         )
-        val embedding2 = RestaurantEmbedding(
+        val embedding2 = Embedding(
             id = testId2,
             moodVector = List(Constants.EMBEDDING_SIZE) { 0.5f }
         )
@@ -109,7 +109,7 @@ class RestaurantEmbeddingRepositoryIntegrativeTest {
     @Test
     fun`should insert new data`() = runBlocking {
         val newVector = List(Constants.EMBEDDING_SIZE) { 0.1f }
-        val newEmbedding = RestaurantEmbedding(
+        val newEmbedding = Embedding(
             id = newId,
             moodVector = newVector
         )
@@ -125,7 +125,7 @@ class RestaurantEmbeddingRepositoryIntegrativeTest {
     @Test
     fun `should throw exception when inserting an existing id`(): Unit = runBlocking {
         val newVector = List(Constants.EMBEDDING_SIZE) { 0.1f }
-        val newEmbedding = RestaurantEmbedding(
+        val newEmbedding = Embedding(
             id = testId1,
             moodVector = newVector
         )
@@ -140,7 +140,7 @@ class RestaurantEmbeddingRepositoryIntegrativeTest {
     @Test
     fun `should upsert new data`() = runBlocking {
         val newVector = List(Constants.EMBEDDING_SIZE) { 0.1f }
-        val newEmbedding = RestaurantEmbedding(
+        val newEmbedding = Embedding(
             id = newId,
             moodVector = newVector
         )
