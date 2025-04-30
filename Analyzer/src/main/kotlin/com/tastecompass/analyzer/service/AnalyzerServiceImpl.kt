@@ -4,6 +4,8 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.tastecompass.analyzer.dto.AnalysisResult
 import com.tastecompass.analyzer.prompt.PromptTemplate
+import com.tastecompass.domain.entity.Restaurant
+import com.tastecompass.domain.entity.Review
 import com.tastecompass.openai.client.OpenAIClientWrapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -14,8 +16,8 @@ class AnalyzerServiceImpl(
 ): AnalyzerService {
     private val gson = Gson()
 
-    override fun analyze(review: String): AnalysisResult {
-        val prompt = PromptTemplate.forReviewAnalysis(review)
+    override fun analyze(review: Review): AnalysisResult {
+        val prompt = PromptTemplate.forReviewAnalysis(review.text)
         val response = client.chat(prompt)
 
         return try {
