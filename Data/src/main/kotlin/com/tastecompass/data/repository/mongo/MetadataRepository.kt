@@ -28,8 +28,6 @@ class MetadataRepository(
     private val database = mongoClient.getDatabase(DATABASE_NAME)
     private val collection = database.getCollection<Document>(COLLECTION_NAME)
 
-    private val logger: Logger = LoggerFactory.getLogger(this::class.java)
-
     override suspend fun insert(
         entity: Metadata
     ): Unit = coroutineScope {
@@ -385,9 +383,30 @@ class MetadataRepository(
         existDeferred.await()
     }
 
+    override suspend fun getByName(
+        name: String
+    ): Metadata = coroutineScope {
+        val filter = eq(Metadata::name.name, name)
+
+        val entityDeferred = async {
+            try {
+                val document = collection.find(filter).first()
+                logger.debug("Get restaurant metadata $name")
+
+                Metadata.fromDocument(document)
+            } catch (e: MongoClientException) {
+                logger.error("Failed to get restaurant metadata $name: ${e.message}")
+
+                throw EntityNotFoundException.restaurantMetadataNotFound(name)
+            }
+        }
+
+        entityDeferred.await()
+    }
+
     companion object {
-        private const val TAG = "RestaurantMetadataRepository"
         private const val DATABASE_NAME = "TasteCompass"
         private const val COLLECTION_NAME = "Restaurant"
+        private val logger: Logger = LoggerFactory.getLogger(this::class.java)
     }
 }

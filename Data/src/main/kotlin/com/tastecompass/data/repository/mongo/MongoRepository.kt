@@ -12,4 +12,5 @@ interface MongoRepository<T> {
     suspend fun get(id: String): T
     suspend fun get(idList: List<String>, batchSize: Int = 100): List<T>
     suspend fun getAll(): List<T>
+    suspend fun getByName(name: String): T
 }

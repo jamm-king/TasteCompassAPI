@@ -73,6 +73,15 @@ class MetadataRepositoryIntegrativeTest {
     }
 
     @Test
+    fun `should return restaurant with given name`() = runBlocking {
+        val name = "name-1"
+
+        val result = metadataRepository.getByName(name)
+
+        assertEquals(name, result.name)
+    }
+
+    @Test
     fun `should return list of restaurant metadata with given ids`() = runBlocking {
         val result = metadataRepository.get(listOf(testId1, testId2))
 
