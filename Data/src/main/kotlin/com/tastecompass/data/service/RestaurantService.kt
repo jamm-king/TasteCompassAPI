@@ -1,5 +1,6 @@
 package com.tastecompass.data.service
 
+import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.domain.common.AnalyzeStep
 import com.tastecompass.domain.entity.Restaurant
 import com.tastecompass.domain.entity.Embedding
@@ -16,6 +17,7 @@ class RestaurantService(
     private val mongoRepository: MongoRepository<Metadata>,
     private val milvusRepository: MilvusRepository<Embedding>
 ) : DataService<Restaurant> {
+
     override suspend fun save(
         entity: Restaurant
     ): Unit = coroutineScope {
@@ -45,17 +47,26 @@ class RestaurantService(
             val metadata = metadataMap[embedding.id]
             metadata?.let { Restaurant.create(it, embedding) }
         }
-
     }
 
-    override suspend fun getByName(name: String): Restaurant {
-        val metadata = mongoRepository.getByName(name)
-        val embedding = milvusRepository.get(metadata.id)
+    override suspend fun getById(
+        id: String
+    ): Restaurant = coroutineScope {
+        try {
+            val metadataDeferred = async { mongoRepository.get(id) }
+            val embeddingDeferred = async { milvusRepository.get(id) }
 
-        return Restaurant(
-            metadata = metadata,
-            embedding = embedding
-        )
+            val metadata = metadataDeferred.await()
+            val embedding = embeddingDeferred.await()
+
+            Restaurant(
+                metadata = metadata,
+                embedding = embedding
+            )
+        } catch(e: EntityNotFoundException) {
+            logger.error("Failed to get restaurant: ${e.message}")
+            throw e
+        }
     }
 
     companion object {
