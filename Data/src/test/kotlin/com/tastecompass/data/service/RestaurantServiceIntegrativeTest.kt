@@ -110,7 +110,7 @@ class RestaurantServiceIntegrativeTest {
     }
 
     @Test
-    fun `should get restaurant with given name`(): Unit = runBlocking {
+    fun `should get restaurant with given id`(): Unit = runBlocking {
         val name = "restaurant-name"
         val metadata = Metadata(id = testId1, status = AnalyzeStep.EMBEDDED, name = name)
         val embedding = Embedding(id = testId1)
@@ -121,10 +121,10 @@ class RestaurantServiceIntegrativeTest {
         dataService.save(restaurant)
         insertedIds.add(testId1)
 
-        val result = dataService.getByName(name)
+        val result = dataService.getById(testId1)
         Thread.sleep(1000)
 
-        assertEquals(name, result.name)
+        assertEquals(testId1, result.id)
     }
 
     companion object {
