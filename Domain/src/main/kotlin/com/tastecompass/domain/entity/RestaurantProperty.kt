@@ -21,8 +21,8 @@ enum class RestaurantProperty(val key: String, val defaultValue: Any) {
     MENUS("menus", emptyList<Any>()),
     MIN_PRICE("minPrice", 0),
     MAX_PRICE("maxPrice", 0),
-    MOOD("mood", "N/A"),
+    MOOD("mood", emptyList<String>()),
     MOOD_VECTOR("moodVector", List(Constants.EMBEDDING_SIZE) { 0.0f }),
-    TASTE("taste", "N/A"),
+    TASTE("taste", emptyList<String>()),
     TASTE_VECTOR("tasteVector", List(Constants.EMBEDDING_SIZE) { 0.0f });
 }
