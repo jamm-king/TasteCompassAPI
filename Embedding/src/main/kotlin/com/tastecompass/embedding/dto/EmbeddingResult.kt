@@ -1,6 +1,6 @@
 package com.tastecompass.embedding.dto
 
 data class EmbeddingResult(
-    val moodVector: List<Double>,
-    val tasteVector: List<Double>
+    val moodVector: List<Float>,
+    val tasteVector: List<Float>
 )
