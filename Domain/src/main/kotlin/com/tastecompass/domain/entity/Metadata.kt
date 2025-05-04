@@ -21,8 +21,8 @@ data class Metadata(
     val menus: List<RestaurantMenu> = RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
     val minPrice: Int = RestaurantProperty.MIN_PRICE.defaultValue as Int,
     val maxPrice: Int = RestaurantProperty.MAX_PRICE.defaultValue as Int,
-    val mood: String = RestaurantProperty.MOOD.defaultValue as String,
-    val taste: String = RestaurantProperty.TASTE.defaultValue as String,
+    val mood: List<String> = RestaurantProperty.MOOD.defaultValue as List<String>,
+    val taste: List<String> = RestaurantProperty.TASTE.defaultValue as List<String>,
 ) {
     fun update(
         status: AnalyzeStep? = null,
@@ -41,8 +41,8 @@ data class Metadata(
         menus: List<RestaurantMenu>? = null,
         minPrice: Int? = null,
         maxPrice: Int? = null,
-        mood: String? = null,
-        taste: String? = null,
+        mood: List<String>? = null,
+        taste: List<String>? = null,
     ): Metadata {
         return copy(
             status = status ?: this.status,
@@ -110,8 +110,8 @@ data class Metadata(
                 menus = document["menus"] as? List<RestaurantMenu> ?: RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
                 minPrice = document["minPrice"] as? Int ?: RestaurantProperty.MIN_PRICE.defaultValue as Int,
                 maxPrice = document["maxPrice"] as? Int ?: RestaurantProperty.MAX_PRICE.defaultValue as Int,
-                mood = document["mood"] as? String ?: RestaurantProperty.MOOD.defaultValue as String,
-                taste = document["taste"] as? String ?: RestaurantProperty.TASTE.defaultValue as String
+                mood = document["mood"] as? List<String> ?: RestaurantProperty.MOOD.defaultValue as List<String>,
+                taste = document["taste"] as? List<String> ?: RestaurantProperty.TASTE.defaultValue as List<String>
             )
         }
     }

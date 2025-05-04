@@ -5,5 +5,5 @@ data class Review(
     val url: String,
     val text: String,
     val x: Double = 0.0,
-    val y: Double= 0.0
+    val y: Double = 0.0
 )

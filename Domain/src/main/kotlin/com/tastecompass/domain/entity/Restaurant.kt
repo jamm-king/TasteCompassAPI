@@ -55,10 +55,10 @@ data class Restaurant(
     val maxPrice: Int
         get() = metadata.maxPrice
 
-    val mood: String
+    val mood: List<String>
         get() = metadata.mood
 
-    val taste: String
+    val taste: List<String>
         get() = metadata.taste
 
     val moodVector: List<Float>
@@ -84,8 +84,8 @@ data class Restaurant(
         menus: List<RestaurantMenu>? = null,
         minPrice: Int? = null,
         maxPrice: Int? = null,
-        mood: String? = null,
-        taste: String? = null,
+        mood: List<String>? = null,
+        taste: List<String>? = null,
         moodVector: List<Float>? = null,
         tasteVector: List<Float>? = null
     ) : Restaurant {
@@ -106,6 +106,62 @@ data class Restaurant(
         else null
 
         return copy(metadata = newMetadata, embedding = newEmbedding)
+    }
+
+    fun addReview(
+        newReview: String
+    ): Restaurant {
+        val updatedReviews = mutableListOf<String>()
+        updatedReviews.addAll(reviews)
+        updatedReviews.add(newReview)
+
+        return update(reviews = updatedReviews)
+    }
+
+    fun addTaste(
+        newTaste: String
+    ): Restaurant {
+        val updatedTaste = mutableListOf<String>()
+        updatedTaste.addAll(taste)
+        updatedTaste.add(newTaste)
+
+        return update(taste = updatedTaste)
+    }
+
+    fun addMood(
+        newMood: String
+    ): Restaurant {
+        val updatedMood = mutableListOf<String>()
+        updatedMood.addAll(mood)
+        updatedMood.add(newMood)
+
+        return update(mood = updatedMood)
+    }
+
+    fun updateTasteVector(
+        newVector: List<Float>
+    ): Restaurant {
+        val updatedVector = weightedAverageVector(tasteVector, taste.size, newVector)
+
+        return update(tasteVector = updatedVector)
+    }
+
+    fun updateMoodVector(
+        newVector: List<Float>
+    ): Restaurant {
+        val updatedVector = weightedAverageVector(moodVector, mood.size, newVector)
+
+        return update(moodVector = updatedVector)
+    }
+
+    private fun weightedAverageVector(
+        old: List<Float>,
+        oldCount: Int,
+        new: List<Float>
+    ): List<Float> {
+        return old.zip(new).map { (o, n) ->
+            (o * oldCount + n) / (oldCount + 1)
+        }
     }
 
     override fun toString(): String {
@@ -142,8 +198,8 @@ data class Restaurant(
             menus: List<RestaurantMenu> = RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
             minPrice: Int = RestaurantProperty.MIN_PRICE.defaultValue as Int,
             maxPrice: Int = RestaurantProperty.MAX_PRICE.defaultValue as Int,
-            mood: String = RestaurantProperty.MOOD.defaultValue as String,
-            taste: String = RestaurantProperty.TASTE.defaultValue as String
+            mood: List<String> = RestaurantProperty.MOOD.defaultValue as List<String>,
+            taste: List<String> = RestaurantProperty.TASTE.defaultValue as List<String>
         ): Restaurant {
             val metadata = Metadata(
                 id = id, status = status, source = source, name = name, category = category,
@@ -173,8 +229,8 @@ data class Restaurant(
             menus: List<RestaurantMenu> = RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
             minPrice: Int = RestaurantProperty.MIN_PRICE.defaultValue as Int,
             maxPrice: Int = RestaurantProperty.MAX_PRICE.defaultValue as Int,
-            mood: String = RestaurantProperty.MOOD.defaultValue as String,
-            taste: String = RestaurantProperty.TASTE.defaultValue as String,
+            mood: List<String> = RestaurantProperty.MOOD.defaultValue as List<String>,
+            taste: List<String> = RestaurantProperty.TASTE.defaultValue as List<String>,
             moodVector: List<Float> = RestaurantProperty.MOOD_VECTOR.defaultValue as List<Float>,
             tasteVector: List<Float> = RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>
         ): Restaurant {
