@@ -24,7 +24,12 @@ class AnalyzerServiceImpl(
             gson.fromJson(response, AnalysisResult::class.java)
         } catch (e: JsonSyntaxException) {
             logger.error("failed to parse: $response")
-            AnalysisResult(null, null, null, null)
+            AnalysisResult(
+                name = "N/A",
+                address = "N/A",
+                taste = "N/A",
+                mood = "N/A"
+            )
         }
     }
 
