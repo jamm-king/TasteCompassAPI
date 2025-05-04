@@ -27,8 +27,8 @@ class EmbeddingServiceTest {
         val restaurant = Restaurant.create(
             id = "test",
             status = AnalyzeStep.ANALYZED,
-            mood = "힙한 느낌",
-            taste = "담백하게 맛있다"
+            mood = listOf("힙한 느낌"),
+            taste = listOf("담백하게 맛있다")
         )
 
         val embeddingResult = embeddingService.embed(restaurant)
