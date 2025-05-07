@@ -27,12 +27,6 @@ class EmbeddingServiceImpl(
             val moodVector = moodVectorDeferred.await()
             val tasteVector = tasteVectorDeferred.await()
 
-<<<<<<< Updated upstream
-        EmbeddingResult(
-            moodVector = moodVector.map { it.toFloat() },
-            tasteVector = tasteVector.map { it.toFloat() }
-        )
-=======
             EmbeddingResult(
                 moodVector = moodVector.map { it.toFloat() },
                 tasteVector = tasteVector.map { it.toFloat() }
@@ -41,7 +35,6 @@ class EmbeddingServiceImpl(
             logger.error("Failed to embed restaurant: ${e.message}")
             throw e
         }
->>>>>>> Stashed changes
     }
 
     companion object {
