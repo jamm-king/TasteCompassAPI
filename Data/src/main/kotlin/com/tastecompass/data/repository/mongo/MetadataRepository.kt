@@ -166,7 +166,9 @@ class MetadataRepository(
         jobs.joinAll()
     }
 
-    override suspend fun upsert(entity: Metadata): Unit = coroutineScope {
+    override suspend fun upsert(
+        entity: Metadata
+    ): Unit = coroutineScope {
         val filter = eq(Metadata::id.name, entity.id)
         val update = combine(
             set(Metadata::status.name, entity.status),
@@ -189,17 +191,15 @@ class MetadataRepository(
             set(Metadata::taste.name, entity.taste)
         )
 
-        val job = launch {
+        launch {
             try {
-                val result = collection.updateOne(filter, update, UpdateOptions().upsert(true))
+                collection.updateOne(filter, update, UpdateOptions().upsert(true))
                 logger.debug("Upserted restaurant metadata ${entity.id}")
             } catch (e: Exception) {
                 logger.error("Failed to upsert restaurant metadata ${entity.id}: ${e.message}")
                 throw e
             }
         }
-
-        job.join()
     }
 
 

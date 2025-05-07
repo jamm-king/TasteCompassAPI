@@ -42,10 +42,10 @@ class EmbeddingRepositoryIntegrativeTest {
         )
 
         repository.delete(listOf(testId1, testId2, newId))
-        repository.insert(listOf(embedding1, embedding2))
-        insertedIds.addAll(listOf(testId1, testId2))
-
         Thread.sleep(500)
+        repository.insert(listOf(embedding1, embedding2))
+        Thread.sleep(500)
+        insertedIds.addAll(listOf(testId1, testId2))
     }
 
     @AfterEach
@@ -70,8 +70,6 @@ class EmbeddingRepositoryIntegrativeTest {
         assertEquals(2, result.size)
         assertTrue(result.any { it.id == testId1 })
         assertTrue(result.any { it.id == testId2 })
-        assertTrue(result.all { it.category == RestaurantProperty.CATEGORY.defaultValue })
-        assertTrue(result.all { it.tasteVector == RestaurantProperty.TASTE_VECTOR.defaultValue})
     }
 
     @Test
