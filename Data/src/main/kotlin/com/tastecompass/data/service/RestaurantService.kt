@@ -28,11 +28,13 @@ class RestaurantService(
         val metadata = entity.metadata
         val embedding = entity.embedding ?: throw Exception("Restaurant id ${entity.id} has no embedding")
 
-        val mongoJob = async { mongoRepository.upsert(metadata) }
-        val milvusJob = async { milvusRepository.upsert(embedding) }
-
-        mongoJob.await()
-        milvusJob.await()
+        try {
+            launch { mongoRepository.upsert(metadata) }
+            launch { milvusRepository.upsert(embedding) }
+        } catch(e: Exception) {
+            logger.error("Failed to save restaurant: ${e.message}")
+            throw e
+        }
     }
 
     override suspend fun search(
@@ -40,12 +42,17 @@ class RestaurantService(
         topK: Int,
         vector: List<Float>
     ): List<Restaurant> = coroutineScope {
-        val embeddingList = milvusRepository.search(fieldName, topK, vector)
-        val metadataMap = mongoRepository.get(embeddingList.map { it.id }).associateBy { it.id }
+        try {
+            val embeddingList = milvusRepository.search(fieldName, topK, vector)
+            val metadataMap = mongoRepository.get(embeddingList.map { it.id }).associateBy { it.id }
 
-        embeddingList.mapNotNull { embedding ->
-            val metadata = metadataMap[embedding.id]
-            metadata?.let { Restaurant.create(it, embedding) }
+            embeddingList.mapNotNull { embedding ->
+                val metadata = metadataMap[embedding.id]
+                metadata?.let { Restaurant.create(it, embedding) }
+            }
+        } catch(e: Exception) {
+            logger.error("Failed to search restaurant: ${e.message}")
+            throw e
         }
     }
 

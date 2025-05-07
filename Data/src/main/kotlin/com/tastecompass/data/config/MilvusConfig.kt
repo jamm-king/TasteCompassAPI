@@ -120,14 +120,14 @@ open class MilvusConfig (
 
             CreateCollectionReq.FieldSchema.builder()
                 .name("id").description("Primary key")
-                .dataType(DataType.VarChar).maxLength(100)
+                .dataType(DataType.VarChar).maxLength(200)
                 .isPrimaryKey(true).autoID(false).build(),
 
             CreateCollectionReq.FieldSchema.builder()
-                .name("category").dataType(DataType.VarChar).maxLength(50).build(),
+                .name("category").dataType(DataType.VarChar).maxLength(200).build(),
 
             CreateCollectionReq.FieldSchema.builder()
-                .name("address").dataType(DataType.VarChar).maxLength(50).build(),
+                .name("address").dataType(DataType.VarChar).maxLength(200).build(),
 
             CreateCollectionReq.FieldSchema.builder()
                 .name("x").dataType(DataType.Double).build(),
@@ -136,7 +136,7 @@ open class MilvusConfig (
                 .name("y").dataType(DataType.Double).build(),
 
             CreateCollectionReq.FieldSchema.builder()
-                .name("businessDays").dataType(DataType.VarChar).maxLength(100).build(),
+                .name("businessDays").dataType(DataType.VarChar).maxLength(200).build(),
 
             CreateCollectionReq.FieldSchema.builder()
                 .name("hasWifi").dataType(DataType.Bool).build(),

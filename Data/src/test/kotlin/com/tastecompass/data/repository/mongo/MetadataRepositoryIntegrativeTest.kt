@@ -145,7 +145,7 @@ class MetadataRepositoryIntegrativeTest {
         val updatedMetadata1 = Metadata(
             id = testId1,
             name = "name-updated1",
-            mood = listOf("mood-updated1") ,
+            mood = listOf("mood-updated1"),
             status = AnalyzeStep.ANALYZED
         )
 

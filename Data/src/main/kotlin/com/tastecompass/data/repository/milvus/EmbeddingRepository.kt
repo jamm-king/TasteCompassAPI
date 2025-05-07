@@ -122,20 +122,15 @@ class EmbeddingRepository(
             .collectionName(COLLECTION_NAME)
             .data(dataList)
             .build()
-        val upsertRespDeferred = async {
+        launch {
             try {
-                val upsertResp = milvusClient.upsert(upsertReq)
+                milvusClient.upsert(upsertReq)
                 logger.debug("Upserted restaurant embedding ${entity.id}")
-
-                upsertResp
             } catch (e: MilvusClientException) {
                 logger.error("Failed to upsert restaurant embedding ${entity.id}: ${e.message}")
-
                 throw DataAccessException.milvusAccessUnavailable()
             }
         }
-
-        upsertRespDeferred.await()
     }
 
     override suspend fun upsert(
