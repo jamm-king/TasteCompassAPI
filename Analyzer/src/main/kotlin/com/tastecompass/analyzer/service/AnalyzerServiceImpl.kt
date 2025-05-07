@@ -17,19 +17,40 @@ class AnalyzerServiceImpl(
     private val gson = Gson()
 
     override fun analyze(review: Review): AnalysisResult {
-        val prompt = PromptTemplate.forReviewAnalysis(review.text)
-        val response = client.chat(prompt)
+        logger.debug("Starting analysis for review from ${review.source}")
+        logger.debug("Review text:\n{}", review.text)
+
+        val response = try {
+            val prompt = PromptTemplate.forReviewAnalysis(review.text)
+            logger.debug("Generated prompt:\n$prompt")
+
+            val resp = client.chat(prompt)
+            logger.debug("Received response from OpenAI:\n$resp")
+
+            resp
+        } catch(e: Exception) {
+            logger.error("Failed to receive response from OpenAI: ${e.message}")
+            throw e
+        }
 
         return try {
-            gson.fromJson(response, AnalysisResult::class.java)
-        } catch (e: JsonSyntaxException) {
-            logger.error("failed to parse: $response")
-            AnalysisResult(
-                name = "N/A",
-                address = "N/A",
-                taste = "N/A",
-                mood = "N/A"
-            )
+            val analysisResult = gson.fromJson(response, AnalysisResult::class.java)
+
+            analysisResult.validate(response)
+
+            logger.debug("Successfully parsed analysis result for review from ${review.source}")
+            logger.debug("Analysis result:\n{}", analysisResult)
+
+            analysisResult
+        } catch (e: Exception) {
+            logger.error("Failed to parse analysis result: ${e.message}")
+            throw e
+        }
+    }
+
+    fun AnalysisResult.validate(rawJson: String) {
+        if (name.isBlank() || address.isBlank() || taste.isBlank() || mood.isBlank()) {
+            throw IllegalArgumentException("Missing required fields in analysis result: $rawJson")
         }
     }
 
