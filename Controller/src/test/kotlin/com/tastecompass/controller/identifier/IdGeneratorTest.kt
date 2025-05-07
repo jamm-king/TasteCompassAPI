@@ -3,8 +3,9 @@ package com.tastecompass.controller.identifier
 import com.tastecompass.analyzer.dto.AnalysisResult
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
-class IdGeneratorMockTest {
+class IdGeneratorTest {
     private val idGenerator = IdGenerator()
 
     @Test
@@ -12,11 +13,13 @@ class IdGeneratorMockTest {
         // given
         val name = "백종원의 맛집"
         val address = "서울특별시 중구 을지로12길 34"
+        val taste = "담백함"
+        val mood = "정겨움"
         val result = AnalysisResult(
             name = name,
             address = address,
-            taste = "담백함",
-            mood = "정겨움"
+            taste = taste,
+            mood = mood
         )
 
         // when
@@ -37,7 +40,14 @@ class IdGeneratorMockTest {
         // given
         val name = "이상한 식당"
         val address = "도로명이 포함되지 않은 주소"
-        val result = AnalysisResult(name = name, address = address)
+        val taste = "이상한 맛"
+        val mood = "이상한 분위기"
+        val result = AnalysisResult(
+            name = name,
+            address = address,
+            taste = taste,
+            mood = mood
+        )
 
         // when & then
         val exception = assertThrows<RuntimeException> {
