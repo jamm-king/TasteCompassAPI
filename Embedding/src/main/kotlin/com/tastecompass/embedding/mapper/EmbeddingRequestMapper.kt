@@ -6,8 +6,8 @@ import com.tastecompass.embedding.dto.EmbeddingRequest
 object EmbeddingRequestMapper {
     fun fromRestaurant(restaurant: Restaurant): EmbeddingRequest {
         return EmbeddingRequest(
-            mood = restaurant.mood,
-            taste = restaurant.taste
+            mood = restaurant.mood.last(),
+            taste = restaurant.taste.last()
         )
     }
 }

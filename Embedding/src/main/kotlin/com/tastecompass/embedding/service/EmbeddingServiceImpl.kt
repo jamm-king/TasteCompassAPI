@@ -27,8 +27,8 @@ class EmbeddingServiceImpl(
         val tasteVector = tasteVectorDeferred.await()
 
         EmbeddingResult(
-            moodVector = moodVector,
-            tasteVector = tasteVector
+            moodVector = moodVector.map { it.toFloat() },
+            tasteVector = tasteVector.map { it.toFloat() }
         )
     }
 
