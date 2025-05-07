@@ -9,19 +9,20 @@ import com.tastecompass.domain.entity.Restaurant
 import com.tastecompass.domain.entity.Review
 import com.tastecompass.embedding.dto.EmbeddingResult
 import com.tastecompass.embedding.service.EmbeddingService
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @ExtendWith(SpringExtension::class)
 class ControllerServiceTest {
@@ -39,21 +40,20 @@ class ControllerServiceTest {
     lateinit var controllerService: ControllerService
 
     private val dummyText = "분위기가 좋고, 달달한 디저트가 맛있는 카페예요."
+    private val analysisResult = AnalysisResult(
+        name = "TestRestaurant",
+        taste = "달콤함",
+        mood = "편안함",
+        address = "서울시 강남구"
+    )
+    private val embeddingResult = EmbeddingResult(
+        moodVector = List(1536) { 0.1f },
+        tasteVector = List(1536) { 0.2f }
+    )
 
     @BeforeEach
     fun setup(): Unit = runBlocking {
-        val dummyResult = AnalysisResult(
-            name = "TestRestaurant",
-            taste = "달콤함",
-            mood = "편안함",
-            address = "서울시 강남구"
-        )
-        val embeddingResult = EmbeddingResult(
-            moodVector = List(1536) { 0.1 },
-            tasteVector = List(1536) { 0.2 }
-        )
-
-        whenever(analyzerService.analyze(any())).thenReturn(dummyResult)
+        whenever(analyzerService.analyze(any())).thenReturn(analysisResult)
         whenever(idGenerator.generate(any())).thenReturn("123")
         whenever(dataService.getById("123")).thenThrow(EntityNotFoundException("Not found"))
         whenever(embeddingService.embed(any())).thenReturn(embeddingResult)
@@ -62,6 +62,22 @@ class ControllerServiceTest {
 
     @Test
     fun `should process review and save restaurant`() = runBlocking {
+        val analyzeLatch = CountDownLatch(1)
+        val embedLatch = CountDownLatch(1)
+        val saveLatch = CountDownLatch(1)
+
+        whenever(analyzerService.analyze(any())).thenAnswer {
+            analyzeLatch.countDown()
+            analysisResult
+        }
+        whenever(embeddingService.embed(any())).thenAnswer {
+            embedLatch.countDown()
+            embeddingResult
+        }
+        whenever(dataService.save(any())).thenAnswer {
+            saveLatch.countDown()
+        }
+
         val review = Review(
             source = "tistory",
             url = "https://tistory.com/test",
@@ -70,11 +86,9 @@ class ControllerServiceTest {
 
         controllerService.receiveReviewData(review)
 
-        delay(1000)
-
-        verify(analyzerService).analyze(any())
-        verify(embeddingService).embed(any())
-        verify(dataService).save(any())
+        assertTrue(analyzeLatch.await(2, TimeUnit.SECONDS))
+        assertTrue(embedLatch.await(2, TimeUnit.SECONDS))
+        assertTrue(saveLatch.await(2, TimeUnit.SECONDS))
     }
 
     @TestConfiguration

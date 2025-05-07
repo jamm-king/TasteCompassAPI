@@ -2,6 +2,7 @@ package com.tastecompass.controller.identifier
 
 import com.tastecompass.analyzer.dto.AnalysisResult
 import com.tastecompass.domain.entity.RestaurantProperty
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.text.Normalizer
 
@@ -10,10 +11,23 @@ class IdGenerator {
 
     fun generate(result: AnalysisResult): String {
         val name = result.name.trim()
-        val roadName = extractRoadName(normalize(result.address ?: ""))
-        val source = "$name|$roadName"
+        val address = result.address
 
-        return hash(source)
+        return try {
+            val normalizedAddress = normalize(address)
+            val roadName = extractRoadName(normalizedAddress)
+            val source = "$name|$roadName"
+
+            logger.debug("Generating ID with name='{}', address='{}'", name, address)
+            logger.debug("Normalized address: '{}'", normalizedAddress)
+            logger.debug("Extracted road name: '{}'", roadName)
+            logger.debug("Hash source string: '{}'", source)
+
+            hash(source)
+        } catch(e: Exception) {
+            logger.error("Failed to generate id with name='$name', address='$address': ${e.message}")
+            throw e
+        }
     }
 
     private fun normalize(text: String): String {
@@ -21,13 +35,17 @@ class IdGenerator {
     }
 
     private fun extractRoadName(address: String): String {
-        val roadRegex = Regex("""\b([가-힣]+로|[가-힣]+길)\b""")
-        return roadRegex.find(address)?.value ?: RestaurantProperty.ADDRESS.defaultValue as String
+        val roadRegex = Regex("""[가-힣]{2,}(로\d+번?길|로|길)""")
+        return roadRegex.find(address)?.value ?: throw RuntimeException("cannot extract road name from $address")
     }
 
     private fun hash(input: String): String {
         return input.toByteArray(Charsets.UTF_8)
             .let { java.security.MessageDigest.getInstance("SHA-256").digest(it) }
             .joinToString("") { "%02x".format(it) }
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(this::class.simpleName)
     }
 }
