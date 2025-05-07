@@ -1,9 +1,7 @@
-package com.tastecompass.embedding.facade
+package com.tastecompass.embedding.service
 
 import com.tastecompass.domain.common.AnalyzeStep
 import com.tastecompass.domain.entity.Restaurant
-import com.tastecompass.embedding.service.EmbeddingService
-import com.tastecompass.embedding.service.EmbeddingServiceImpl
 import com.tastecompass.openai.client.OpenAIClientWrapperImpl
 import com.tastecompass.openai.config.OpenAIConfig
 import kotlinx.coroutines.runBlocking

@@ -16,20 +16,32 @@ class EmbeddingServiceImpl(
     override suspend fun embed(
         restaurant: Restaurant
     ): EmbeddingResult = coroutineScope {
-        val request = EmbeddingRequestMapper.fromRestaurant(restaurant)
+        try {
+            val request = EmbeddingRequestMapper.fromRestaurant(restaurant)
 
-        val moodVectorDeferred = async { client.embed(request.mood) }
-        val tasteVectorDeferred = async { client.embed(request.taste) }
+            val moodVectorDeferred = async { client.embed(request.mood) }
+            val tasteVectorDeferred = async { client.embed(request.taste) }
 
-        logger.info("Embedding... ${restaurant.toString()}")
+            logger.debug("Embedding... {}", restaurant)
 
-        val moodVector = moodVectorDeferred.await()
-        val tasteVector = tasteVectorDeferred.await()
+            val moodVector = moodVectorDeferred.await()
+            val tasteVector = tasteVectorDeferred.await()
 
+<<<<<<< Updated upstream
         EmbeddingResult(
             moodVector = moodVector.map { it.toFloat() },
             tasteVector = tasteVector.map { it.toFloat() }
         )
+=======
+            EmbeddingResult(
+                moodVector = moodVector.map { it.toFloat() },
+                tasteVector = tasteVector.map { it.toFloat() }
+            )
+        } catch(e: Exception) {
+            logger.error("Failed to embed restaurant: ${e.message}")
+            throw e
+        }
+>>>>>>> Stashed changes
     }
 
     companion object {
