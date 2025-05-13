@@ -2,7 +2,7 @@ package com.tastecompass.analyzer.dto
 
 import com.tastecompass.domain.entity.RestaurantMenu
 
-data class AnalysisResult(
+data class OpenAIAnalysisResult(
     val name: String,
     val category: String? = null,
     val phone: String? = null,

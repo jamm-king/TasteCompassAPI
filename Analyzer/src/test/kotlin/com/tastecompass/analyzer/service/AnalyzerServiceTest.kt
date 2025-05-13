@@ -1,6 +1,8 @@
 package com.tastecompass.analyzer.service
 
 import com.tastecompass.domain.entity.Review
+import com.tastecompass.kakao.client.KakaoMapClientImpl
+import com.tastecompass.kakao.config.KakaoConfig
 import com.tastecompass.openai.client.OpenAIClientWrapperImpl
 import com.tastecompass.openai.config.OpenAIConfig
 import kotlinx.coroutines.runBlocking
@@ -13,7 +15,11 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringExtension
 
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes=[OpenAIConfig::class, OpenAIClientWrapperImpl::class, AnalyzerServiceImpl::class])
+@ContextConfiguration(classes=[
+    OpenAIConfig::class, OpenAIClientWrapperImpl::class,
+    KakaoConfig::class, KakaoMapClientImpl::class,
+    AnalyzerServiceImpl::class
+])
 @TestPropertySource("classpath:openai.properties")
 class AnalyzerServiceTest {
 
@@ -122,7 +128,7 @@ class AnalyzerServiceTest {
             url = "tistory.com",
             text = text
         )
-        val json = analyzerService.analyze(review)
-        logger.info(json.toString())
+        val result = analyzerService.analyze(review)
+        logger.info(result.toString())
     }
 }

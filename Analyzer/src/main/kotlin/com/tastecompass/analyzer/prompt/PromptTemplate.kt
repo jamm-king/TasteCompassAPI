@@ -4,7 +4,7 @@ object PromptTemplate {
     fun forReviewAnalysis(review: String): String = """
         아래 블로그 리뷰를 참고하여 식당의 속성을 분석해줘.
         다음 항목들을 JSON 형식으로 추출해줘:
-        - name: 식당 이름 (있으면)
+        - name: 식당 이름
         - category: 음식 종류 (예: 한식, 일식, 중식, 양식 등)
         - phone: 식당 전화번호 (예: 052-242-2401)
         - address: 식당 주소 (예: 포항시 북구 이인로 90)
