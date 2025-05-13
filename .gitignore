@@ -42,3 +42,4 @@ out/
 **/openai.properties
 **/milvus.properties
 **/mongo.properties
+**/kakao.properties
