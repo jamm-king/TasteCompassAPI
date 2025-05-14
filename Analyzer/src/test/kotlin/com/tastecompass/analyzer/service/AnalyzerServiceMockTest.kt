@@ -36,6 +36,7 @@ class AnalyzerServiceMockTest {
         val review = Review(
             text = "This restaurant had amazing sushi!",
             source = "naver",
+            address = "포항시 남구 이인로 90",
             url = "naver.com/test"
         )
         val expectedAnalysisResult = OpenAIAnalysisResult(
@@ -77,6 +78,7 @@ class AnalyzerServiceMockTest {
         val review = Review(
             text = "Great ramen.",
             source = "blog",
+            address = "포항시 남구 이인로 90",
             url = "blog.com/test"
         )
         whenever(openaiClient.chat(any())).thenThrow(RuntimeException())
@@ -97,6 +99,7 @@ class AnalyzerServiceMockTest {
         val review = Review(
             text = "Nice cafe",
             source = "tistory",
+            address = "포항시 남구 이인로 90",
             url = "tistory.com/test"
         )
 
