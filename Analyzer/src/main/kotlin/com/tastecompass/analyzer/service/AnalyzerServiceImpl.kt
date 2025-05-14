@@ -41,7 +41,11 @@ class AnalyzerServiceImpl(
             throw e
         }
 
-        val geo = kakaomapClient.geocode(openaiAnalysisResult.address)
+        val geo = if(review.address.isNotBlank()) {
+            kakaomapClient.geocode(openaiAnalysisResult.address)
+        } else {
+            kakaomapClient.geocode(review.address)
+        }
         logger.debug("Geocoded address='{}', x={}, y={}", geo.normalizedAddress, geo.x, geo.y)
 
         FullAnalysisResult(
