@@ -1,11 +1,6 @@
 package com.tastecompass.analyzer.prompt
 
 object PromptTemplate {
-    /**
-     * 리뷰 텍스트를 기반으로 식당 속성을 추출할 수 있는 정교화된 프롬프트
-     * - 출력은 오직 JSON 객체 (추가 설명 금지)
-     * - JSON 스키마를 엄격히 준수
-     */
     fun forReviewAnalysis(review: String): String = """
 <system>
 당신은 식당 리뷰에서 구조화된 정보를 추출하는 JSON 생성기입니다.
