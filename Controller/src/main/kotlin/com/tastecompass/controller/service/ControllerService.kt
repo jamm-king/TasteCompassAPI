@@ -1,6 +1,6 @@
 package com.tastecompass.controller.service
 
-import com.tastecompass.analyzer.dto.AnalysisResult
+import com.tastecompass.analyzer.dto.FullAnalysisResult
 import com.tastecompass.analyzer.service.AnalyzerService
 import com.tastecompass.controller.identifier.IdGenerator
 import com.tastecompass.data.exception.EntityNotFoundException
@@ -133,7 +133,7 @@ class ControllerService(
     private fun createRestaurant(
         id: String,
         review: Review,
-        analysisResult: AnalysisResult
+        analysisResult: FullAnalysisResult
     ): Restaurant {
         return Restaurant.create(
             id = id,
@@ -150,14 +150,16 @@ class ControllerService(
             minPrice = analysisResult.minPrice ?: RestaurantProperty.MIN_PRICE.defaultValue as Int,
             maxPrice = analysisResult.maxPrice ?: RestaurantProperty.MAX_PRICE.defaultValue as Int,
             mood = listOf(analysisResult.mood),
-            taste = listOf(analysisResult.taste)
+            taste = listOf(analysisResult.taste),
+            x = analysisResult.x,
+            y = analysisResult.y
         )
     }
 
     private fun updateRestaurant(
         restaurant: Restaurant,
         review: Review,
-        analysisResult: AnalysisResult
+        analysisResult: FullAnalysisResult
     ): Restaurant {
         return restaurant
             .addReview(review.text)
