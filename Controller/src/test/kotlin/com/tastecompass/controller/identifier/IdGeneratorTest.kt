@@ -1,6 +1,6 @@
 package com.tastecompass.controller.identifier
 
-import com.tastecompass.analyzer.dto.AnalysisResult
+import com.tastecompass.analyzer.dto.FullAnalysisResult
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -15,11 +15,13 @@ class IdGeneratorTest {
         val address = "서울특별시 중구 을지로12길 34"
         val taste = "담백함"
         val mood = "정겨움"
-        val result = AnalysisResult(
+        val result = FullAnalysisResult(
             name = name,
             address = address,
             taste = taste,
-            mood = mood
+            mood = mood,
+            x = 127.00,
+            y = 35.00
         )
 
         // when
@@ -42,11 +44,13 @@ class IdGeneratorTest {
         val address = "도로명이 포함되지 않은 주소"
         val taste = "이상한 맛"
         val mood = "이상한 분위기"
-        val result = AnalysisResult(
+        val result = FullAnalysisResult(
             name = name,
             address = address,
             taste = taste,
-            mood = mood
+            mood = mood,
+            x = 127.00,
+            y = 35.00
         )
 
         // when & then

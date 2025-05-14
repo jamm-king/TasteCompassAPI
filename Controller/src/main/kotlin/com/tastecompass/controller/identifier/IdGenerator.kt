@@ -1,7 +1,6 @@
 package com.tastecompass.controller.identifier
 
-import com.tastecompass.analyzer.dto.AnalysisResult
-import com.tastecompass.domain.entity.RestaurantProperty
+import com.tastecompass.analyzer.dto.FullAnalysisResult
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.text.Normalizer
@@ -9,7 +8,7 @@ import java.text.Normalizer
 @Component
 class IdGenerator {
 
-    fun generate(result: AnalysisResult): String {
+    fun generate(result: FullAnalysisResult): String {
         val name = result.name.trim()
         val address = result.address
 

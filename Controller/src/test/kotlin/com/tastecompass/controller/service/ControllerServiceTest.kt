@@ -1,6 +1,6 @@
 package com.tastecompass.controller.service
 
-import com.tastecompass.analyzer.dto.AnalysisResult
+import com.tastecompass.analyzer.dto.FullAnalysisResult
 import com.tastecompass.analyzer.service.AnalyzerService
 import com.tastecompass.controller.identifier.IdGenerator
 import com.tastecompass.data.exception.EntityNotFoundException
@@ -40,11 +40,13 @@ class ControllerServiceTest {
     lateinit var controllerService: ControllerService
 
     private val dummyText = "분위기가 좋고, 달달한 디저트가 맛있는 카페예요."
-    private val analysisResult = AnalysisResult(
+    private val analysisResult = FullAnalysisResult(
         name = "TestRestaurant",
         taste = "달콤함",
         mood = "편안함",
-        address = "서울시 강남구"
+        address = "서울시 강남구",
+        x = 127.00,
+        y = 35.00
     )
     private val embeddingResult = EmbeddingResult(
         moodVector = List(1536) { 0.1f },
@@ -81,6 +83,7 @@ class ControllerServiceTest {
         val review = Review(
             source = "tistory",
             url = "https://tistory.com/test",
+            address = "포항시 남구 이인로 90",
             text = dummyText
         )
 
