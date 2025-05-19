@@ -9,6 +9,7 @@ import com.tastecompass.data.repository.milvus.EmbeddingRepository
 import com.tastecompass.data.repository.milvus.MilvusRepository
 import com.tastecompass.data.repository.mongo.MetadataRepository
 import com.tastecompass.data.repository.mongo.MongoRepository
+import com.tastecompass.data.saga.SagaCoordinator
 import com.tastecompass.domain.entity.Embedding
 import com.tastecompass.domain.entity.Metadata
 import com.tastecompass.domain.entity.Restaurant
@@ -24,9 +25,11 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes=[MilvusConfig::class, MongoConfig::class,
-EmbeddingRepository::class, MetadataRepository::class,
-RestaurantService::class])
+@ContextConfiguration(classes=[
+    MilvusConfig::class, MongoConfig::class,
+    SagaCoordinator::class,
+    EmbeddingRepository::class, MetadataRepository::class,
+    RestaurantService::class])
 class RestaurantServiceIntegrativeTest {
 
     @Autowired
@@ -60,10 +63,10 @@ class RestaurantServiceIntegrativeTest {
         dataService.save(restaurant)
         insertedIds.add(testId1)
 
-        val mongoGet = mongoRepository.get(testId1)
-        val milvusGet = milvusRepository.get(testId1)
-        assertEquals(testId1, mongoGet.id)
-        assertEquals(testId1, milvusGet.id)
+        Thread.sleep(1000)
+
+        val result = dataService.getById(testId1)
+        assertEquals(testId1, result.id)
     }
 
     @Test

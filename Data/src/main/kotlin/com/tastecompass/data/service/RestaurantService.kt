@@ -8,14 +8,19 @@ import com.tastecompass.domain.entity.Metadata
 import com.tastecompass.data.exception.InvalidRequestException
 import com.tastecompass.data.repository.milvus.MilvusRepository
 import com.tastecompass.data.repository.mongo.MongoRepository
+import com.tastecompass.data.saga.SagaContext
+import com.tastecompass.data.saga.SagaCoordinator
+import com.tastecompass.data.saga.SagaStep
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.util.UUID
 
 @Service
 class RestaurantService(
-    private val mongoRepository: MongoRepository<Metadata>,
-    private val milvusRepository: MilvusRepository<Embedding>
+    private val mongoRepo: MongoRepository<Metadata>,
+    private val milvusRepo: MilvusRepository<Embedding>,
+    private val saga: SagaCoordinator
 ) : DataService<Restaurant> {
 
     override suspend fun save(
@@ -25,16 +30,64 @@ class RestaurantService(
             throw InvalidRequestException.invalidSaveState(entity)
         }
 
-        val metadata = entity.metadata
-        val embedding = entity.embedding ?: throw Exception("Restaurant id ${entity.id} has no embedding")
-
-        try {
-            launch { mongoRepository.upsert(metadata) }
-            launch { milvusRepository.upsert(embedding) }
-        } catch(e: Exception) {
-            logger.error("Failed to save restaurant: ${e.message}")
-            throw e
+        val sagaId = UUID.randomUUID().toString()
+        val context = SagaContext(sagaId).apply {
+            put("restaurantId", entity.id)
+            put("entity", entity)
         }
+
+        val original: Restaurant? = try {
+            getById(entity.id)
+        } catch (e: EntityNotFoundException) {
+            null
+        }
+        val isNew = (original == null)
+        context.put("isNew", isNew)
+        original?.let { context.put("original", it) }
+
+        val mongoStep = SagaStep<Unit>(
+            name = "mongo",
+            action = { ctx ->
+                val meta = ctx.get<Restaurant>("entity")!!.metadata
+                if (ctx.get<Boolean>("isNew") == true) {
+                    mongoRepo.insert(meta)
+                } else {
+                    mongoRepo.update(meta)
+                }
+            },
+            compensation = { ctx, _ ->
+                val id = ctx.get<String>("restaurantId")!!
+                if (ctx.get<Boolean>("isNew") == true) {
+                    mongoRepo.delete(id)
+                } else {
+                    val origMeta = ctx.get<Restaurant>("original")!!.metadata
+                    mongoRepo.update(origMeta)
+                }
+            }
+        )
+
+        val milvusStep = SagaStep<Unit>(
+            name = "milvus",
+            action = { ctx ->
+                val emb = ctx.get<Restaurant>("entity")!!.embedding!!
+                if (ctx.get<Boolean>("isNew") == true) {
+                    milvusRepo.insert(emb)
+                } else {
+                    milvusRepo.upsert(emb)
+                }
+            },
+            compensation = { ctx, _ ->
+                val id = ctx.get<String>("restaurantId")!!
+                if (ctx.get<Boolean>("isNew") == true) {
+                    milvusRepo.delete(id)
+                } else {
+                    val origEmb = ctx.get<Restaurant>("original")!!.embedding!!
+                    milvusRepo.upsert(origEmb)
+                }
+            }
+        )
+
+        saga.execute(context, listOf(mongoStep, milvusStep))
     }
 
     override suspend fun search(
@@ -43,8 +96,8 @@ class RestaurantService(
         vector: List<Float>
     ): List<Restaurant> = coroutineScope {
         try {
-            val embeddingList = milvusRepository.search(fieldName, topK, vector)
-            val metadataMap = mongoRepository.get(embeddingList.map { it.id }).associateBy { it.id }
+            val embeddingList = milvusRepo.search(fieldName, topK, vector)
+            val metadataMap = mongoRepo.get(embeddingList.map { it.id }).associateBy { it.id }
 
             embeddingList.mapNotNull { embedding ->
                 val metadata = metadataMap[embedding.id]
@@ -60,8 +113,8 @@ class RestaurantService(
         id: String
     ): Restaurant = coroutineScope {
         try {
-            val metadataDeferred = async { mongoRepository.get(id) }
-            val embeddingDeferred = async { milvusRepository.get(id) }
+            val metadataDeferred = async { mongoRepo.get(id) }
+            val embeddingDeferred = async { milvusRepo.get(id) }
 
             val metadata = metadataDeferred.await()
             val embedding = embeddingDeferred.await()
@@ -77,7 +130,7 @@ class RestaurantService(
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(this::class.simpleName)
+        private val logger = LoggerFactory.getLogger(this::class.java)
     }
 }
 
