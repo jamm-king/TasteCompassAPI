@@ -41,15 +41,22 @@ class AnalyzerServiceImpl(
             throw e
         }
 
-        val geo = if(review.address.isNotBlank()) {
-            kakaomapClient.geocode(openaiAnalysisResult.address)
-        } else {
-            kakaomapClient.geocode(review.address)
+        val geo = try {
+            if(review.address.isNotBlank()) {
+                kakaomapClient.geocode(review.address)
+            } else {
+                kakaomapClient.geocode(openaiAnalysisResult.address)
+            }
+        } catch(e: Exception) {
+            logger.error("Failed to get geocode from KakaoMapClient: ${e.message}")
+            throw e
         }
         logger.debug("Geocoded address='{}', x={}, y={}", geo.normalizedAddress, geo.x, geo.y)
 
+        val filteredName = openaiAnalysisResult.name.filterBranchInfo()
+
         FullAnalysisResult(
-            name = openaiAnalysisResult.name,
+            name = filteredName,
             category = openaiAnalysisResult.category,
             phone = openaiAnalysisResult.phone,
             address = geo.normalizedAddress,
@@ -66,6 +73,16 @@ class AnalyzerServiceImpl(
         )
     }
 
+    private fun String.filterBranchInfo(): String {
+        val noParen = this.trim().replace(Regex("\\s*\\([^)]*\\)\$"), "")
+        val tokens = noParen.split("\\s+".toRegex())
+        return if (tokens.size > 1 && tokens.last().endsWith("점")) {
+            tokens.dropLast(1).joinToString(" ")
+        } else {
+            noParen
+        }
+    }
+
     fun OpenAIAnalysisResult.validate(rawJson: String) {
         if (name.isBlank() || address.isBlank() || taste.isBlank() || mood.isBlank()) {
             throw IllegalArgumentException("Missing required fields in analysis result: $rawJson")
@@ -73,6 +90,6 @@ class AnalyzerServiceImpl(
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(this::class.simpleName)
+        private val logger = LoggerFactory.getLogger(this::class.java)
     }
 }

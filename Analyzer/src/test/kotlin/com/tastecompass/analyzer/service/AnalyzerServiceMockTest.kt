@@ -40,22 +40,22 @@ class AnalyzerServiceMockTest {
             url = "naver.com/test"
         )
         val expectedAnalysisResult = OpenAIAnalysisResult(
-            name = "Sushi Place",
-            address = "Tokyo, Japan",
-            taste = "Delicious",
-            mood = "Cozy",
+            name = "본죽 이인지구점",
+            address = "포항시 남구 이인로 90",
+            taste = "담백함",
+            mood = "가정적임",
         )
         val responseJson = gson.toJson(expectedAnalysisResult)
         val expectedGeocode = GeocodeResult(
-            normalizedAddress = "Tokyo, Japan",
+            normalizedAddress = "포항시 남구 이인로 90",
             x = 127.00,
             y = 35.00
         )
         val expectedResult = FullAnalysisResult(
-            name = "Sushi Place",
-            address = "Tokyo, Japan",
-            taste = "Delicious",
-            mood = "Cozy",
+            name = "본죽",
+            address = "포항시 남구 이인로 90",
+            taste = "담백함",
+            mood = "가정적임",
             x = 127.00,
             y = 35.00
         )
