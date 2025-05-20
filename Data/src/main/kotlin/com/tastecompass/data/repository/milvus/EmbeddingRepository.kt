@@ -18,8 +18,6 @@ class EmbeddingRepository(
     private val milvusClient: MilvusClientV2
 ): MilvusRepository<Embedding> {
 
-    private val logger: Logger = LoggerFactory.getLogger(this::class.java)
-
     override suspend fun search(
         fieldName: String,
         topK: Int,
@@ -346,5 +344,6 @@ class EmbeddingRepository(
             "tasteVector"
         )
         private const val BATCH_SIZE = 100
+        private val logger: Logger = LoggerFactory.getLogger(this::class.java)
     }
 }
