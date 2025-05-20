@@ -126,7 +126,7 @@ class AnalyzerServiceTest {
         val review = Review(
             source = "tistory",
             url = "tistory.com",
-            address = "포항시 남구 이인로 90",
+            address = "경기도 수원시 영통구 매영로269번길 43 3층 302호 좋은소식",
             text = text
         )
         val result = analyzerService.analyze(review)
