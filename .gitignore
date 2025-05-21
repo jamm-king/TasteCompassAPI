@@ -39,6 +39,7 @@ out/
 ### Kotlin ###
 .kotlin
 
+**/application-test.properties
 **/openai.properties
 **/milvus.properties
 **/mongo.properties

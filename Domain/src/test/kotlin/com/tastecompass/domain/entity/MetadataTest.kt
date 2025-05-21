@@ -1,8 +1,6 @@
 package com.tastecompass.domain.entity
 
 import com.tastecompass.domain.common.AnalyzeStep
-import com.tastecompass.domain.entity.Metadata
-import com.tastecompass.domain.entity.RestaurantProperty
 import org.bson.Document
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -49,14 +47,19 @@ class MetadataTest {
             status = AnalyzeStep.PREPARED,
             name = "name-1"
         )
+        val review = Review(
+            text = "This restaurant had amazing sushi!",
+            source = "naver",
+            address = "포항시 남구 이인로 90",
+            url = "naver.com/test"
+        )
 
         val updatedMetadata = metadata.update(
             status = AnalyzeStep.ANALYZED,
-            reviews = listOf("taste good", "mood good")
+            reviews = listOf(review)
         )
 
         assertEquals(AnalyzeStep.ANALYZED, updatedMetadata.status)
-        assertTrue(updatedMetadata.reviews.any { it == "taste good" })
-        assertTrue(updatedMetadata.reviews.any { it == "mood good" })
+        assertTrue(updatedMetadata.reviews.any { it.source == "naver" })
     }
 }

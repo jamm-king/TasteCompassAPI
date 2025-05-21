@@ -13,9 +13,8 @@ data class Metadata(
     val address: String = RestaurantProperty.ADDRESS.defaultValue as String,
     val x: Double = RestaurantProperty.X.defaultValue as Double,
     val y: Double = RestaurantProperty.Y.defaultValue as Double,
-    val reviews: List<String> = RestaurantProperty.REVIEWS.defaultValue as List<String>,
+    val reviews: List<Review> = RestaurantProperty.REVIEWS.defaultValue as List<Review>,
     val businessDays: String = RestaurantProperty.BUSINESS_DAYS.defaultValue as String,
-    val url: String = RestaurantProperty.URL.defaultValue as String,
     val hasWifi: Boolean = RestaurantProperty.HAS_WIFI.defaultValue as Boolean,
     val hasParking: Boolean = RestaurantProperty.HAS_PARKING.defaultValue as Boolean,
     val menus: List<RestaurantMenu> = RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
@@ -33,9 +32,8 @@ data class Metadata(
         address: String? = null,
         x: Double? = null,
         y: Double? = null,
-        reviews: List<String>? = null,
+        reviews: List<Review>? = null,
         businessDays: String? = null,
-        url: String? = null,
         hasWifi: Boolean? = null,
         hasParking: Boolean? = null,
         menus: List<RestaurantMenu>? = null,
@@ -55,7 +53,6 @@ data class Metadata(
             y = y ?: this.y,
             reviews = reviews ?: this.reviews,
             businessDays = businessDays ?: this.businessDays,
-            url = url ?: this.url,
             hasWifi = hasWifi ?: this.hasWifi,
             hasParking = hasParking ?: this.hasParking,
             menus = menus ?: this.menus,
@@ -79,7 +76,6 @@ data class Metadata(
             put(RestaurantProperty.Y.key, y)
             put(RestaurantProperty.REVIEWS.key, reviews)
             put(RestaurantProperty.BUSINESS_DAYS.key, businessDays)
-            put(RestaurantProperty.URL.key, url)
             put(RestaurantProperty.HAS_WIFI.key, hasWifi)
             put(RestaurantProperty.HAS_PARKING.key, hasParking)
             put(RestaurantProperty.MENUS.key, menus)
@@ -102,9 +98,8 @@ data class Metadata(
                 address = document["address"] as? String ?: RestaurantProperty.ADDRESS.defaultValue as String,
                 x = document["x"] as? Double ?: RestaurantProperty.X.defaultValue as Double,
                 y = document["y"] as? Double ?: RestaurantProperty.Y.defaultValue as Double,
-                reviews = document["reviews"] as? List<String> ?: RestaurantProperty.REVIEWS.defaultValue as List<String>,
+                reviews = document["reviews"] as? List<Review> ?: RestaurantProperty.REVIEWS.defaultValue as List<Review>,
                 businessDays = document["businessDays"] as? String ?: RestaurantProperty.BUSINESS_DAYS.defaultValue as String,
-                url = document["url"] as? String ?: RestaurantProperty.URL.defaultValue as String,
                 hasWifi = document["hasWifi"] as? Boolean ?: RestaurantProperty.HAS_WIFI.defaultValue as Boolean,
                 hasParking = document["hasParking"] as? Boolean ?: RestaurantProperty.HAS_PARKING.defaultValue as Boolean,
                 menus = document["menus"] as? List<RestaurantMenu> ?: RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,

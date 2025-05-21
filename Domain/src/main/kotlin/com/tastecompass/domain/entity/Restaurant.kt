@@ -31,14 +31,11 @@ data class Restaurant(
     val y: Double
         get() = metadata.y
 
-    val reviews: List<String>
+    val reviews: List<Review>
         get() = metadata.reviews
 
     val businessDays: String
         get() = metadata.businessDays
-
-    val url: String
-        get() = metadata.url
 
     val hasWifi: Boolean
         get() = metadata.hasWifi
@@ -76,9 +73,8 @@ data class Restaurant(
         address: String? = null,
         x: Double? = null,
         y: Double? = null,
-        reviews: List<String>? = null,
+        reviews: List<Review>? = null,
         businessDays: String? = null,
-        url: String? = null,
         hasWifi: Boolean? = null,
         hasParking: Boolean? = null,
         menus: List<RestaurantMenu>? = null,
@@ -92,7 +88,7 @@ data class Restaurant(
         var newMetadata = metadata.update(
             status = status, source = source, name = name, category = category,
             phone = phone, address = address, x = x, y = y, reviews = reviews,
-            businessDays = businessDays, url = url, hasWifi = hasWifi, hasParking = hasParking,
+            businessDays = businessDays, hasWifi = hasWifi, hasParking = hasParking,
             menus = menus, minPrice = minPrice, maxPrice = maxPrice, mood = mood, taste = taste
         )
         val newEmbedding = embedding?.update(
@@ -109,9 +105,9 @@ data class Restaurant(
     }
 
     fun addReview(
-        newReview: String
+        newReview: Review
     ): Restaurant {
-        val updatedReviews = mutableListOf<String>()
+        val updatedReviews = mutableListOf<Review>()
         updatedReviews.addAll(reviews)
         updatedReviews.add(newReview)
 
@@ -190,9 +186,8 @@ data class Restaurant(
             address: String = RestaurantProperty.ADDRESS.defaultValue as String,
             x: Double = RestaurantProperty.X.defaultValue as Double,
             y: Double = RestaurantProperty.Y.defaultValue as Double,
-            reviews: List<String> = RestaurantProperty.REVIEWS.defaultValue as List<String>,
+            reviews: List<Review> = RestaurantProperty.REVIEWS.defaultValue as List<Review>,
             businessDays: String = RestaurantProperty.BUSINESS_DAYS.defaultValue as String,
-            url: String = RestaurantProperty.URL.defaultValue as String,
             hasWifi: Boolean = RestaurantProperty.HAS_WIFI.defaultValue as Boolean,
             hasParking: Boolean = RestaurantProperty.HAS_PARKING.defaultValue as Boolean,
             menus: List<RestaurantMenu> = RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
@@ -204,7 +199,7 @@ data class Restaurant(
             val metadata = Metadata(
                 id = id, status = status, source = source, name = name, category = category,
                 phone = phone, address = address, x = x, y = y, reviews = reviews,
-                businessDays = businessDays, url = url, hasWifi = hasWifi, hasParking = hasParking,
+                businessDays = businessDays, hasWifi = hasWifi, hasParking = hasParking,
                 menus = menus, minPrice = minPrice, maxPrice = maxPrice, mood = mood, taste = taste
             )
 
@@ -221,9 +216,8 @@ data class Restaurant(
             address: String = RestaurantProperty.ADDRESS.defaultValue as String,
             x: Double = RestaurantProperty.X.defaultValue as Double,
             y: Double = RestaurantProperty.Y.defaultValue as Double,
-            reviews: List<String> = RestaurantProperty.REVIEWS.defaultValue as List<String>,
+            reviews: List<Review> = RestaurantProperty.REVIEWS.defaultValue as List<Review>,
             businessDays: String = RestaurantProperty.BUSINESS_DAYS.defaultValue as String,
-            url: String = RestaurantProperty.URL.defaultValue as String,
             hasWifi: Boolean = RestaurantProperty.HAS_WIFI.defaultValue as Boolean,
             hasParking: Boolean = RestaurantProperty.HAS_PARKING.defaultValue as Boolean,
             menus: List<RestaurantMenu> = RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
@@ -237,7 +231,7 @@ data class Restaurant(
             val metadata = Metadata(
                 id = id, status = status, source = source, name = name, category = category,
                 phone = phone, address = address, x = x, y = y, reviews = reviews,
-                businessDays = businessDays, url = url, hasWifi = hasWifi, hasParking = hasParking,
+                businessDays = businessDays, hasWifi = hasWifi, hasParking = hasParking,
                 menus = menus, minPrice = minPrice, maxPrice = maxPrice, mood = mood, taste = taste
             )
             val embedding = Embedding(

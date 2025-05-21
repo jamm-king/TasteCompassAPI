@@ -139,7 +139,6 @@ class ControllerService(
             id = id,
             status = AnalyzeStep.ANALYZED,
             source = review.source,
-            url = review.url,
             name = analysisResult.name,
             category = analysisResult.category ?: RestaurantProperty.CATEGORY.defaultValue as String,
             phone = analysisResult.phone ?: RestaurantProperty.PHONE.defaultValue as String,
@@ -163,7 +162,7 @@ class ControllerService(
         analysisResult: FullAnalysisResult
     ): Restaurant {
         return restaurant
-            .addReview(review.text)
+            .addReview(review)
             .addTaste(analysisResult.taste)
             .addMood(analysisResult.mood)
     }
