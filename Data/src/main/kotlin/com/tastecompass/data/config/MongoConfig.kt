@@ -24,10 +24,6 @@ import java.util.concurrent.ConcurrentHashMap
 open class MongoConfig(
     private val mongoProperties: MongoProperties
 ) {
-    private val maxRetries = 3
-    private val retryDelayMs = 2000L
-    private val logger: Logger = LoggerFactory.getLogger(this::class.java)
-
     @Bean
     open fun connectionString(): ConnectionString {
         val uri = "${mongoProperties.protocol}://${mongoProperties.user}:${mongoProperties.password}@${mongoProperties.host}/?${mongoProperties.options}"
@@ -56,9 +52,7 @@ open class MongoConfig(
     open fun mongoClient(mongoClientSettings: MongoClientSettings): MongoClient {
         return retry(maxRetries, retryDelayMs) {
             val client = MongoClient.create(mongoClientSettings)
-            COLLECTION_NAMES.forEach { collectionName ->
-                ensureCollectionExists(client, collectionName)
-            }
+            ensureCollectionExists(client, mongoProperties.collectionName)
 
             client
         }
@@ -81,10 +75,10 @@ open class MongoConfig(
     private val collectionLocks = ConcurrentHashMap<String, Any>()
 
     private fun checkDatabaseExist(mongoClient: MongoClient) {
-        if(!mongoClient.listDatabaseNames().toList().contains(DATABASE_NAME)) {
-            logger.error("Database '$DATABASE_NAME' does not exist. Create through MongoDB Atlas.")
+        if(!mongoClient.listDatabaseNames().toList().contains(mongoProperties.databaseName)) {
+            logger.error("Database '${mongoProperties.databaseName}' does not exist. Create through MongoDB Atlas.")
 
-            throw DataAccessException.databaseNotExist(DATABASE_NAME)
+            throw DataAccessException.databaseNotExist(mongoProperties.databaseName)
         }
     }
 
@@ -94,11 +88,11 @@ open class MongoConfig(
             try {
                 checkDatabaseExist(mongoClient)
             } catch(e: DataAccessException) {
-                logger.error("Failed to load database '$DATABASE_NAME': ${e.message}")
+                logger.error("Failed to load database '${mongoProperties.databaseName}': ${e.message}")
 
                 return
             }
-            val database: MongoDatabase = mongoClient.getDatabase(DATABASE_NAME)
+            val database: MongoDatabase = mongoClient.getDatabase(mongoProperties.databaseName)
 
             if (!database.listCollectionNames().toList().contains(collectionName)) {
                 logger.info("Collection '$collectionName' does not exist. Creating...")
@@ -111,9 +105,8 @@ open class MongoConfig(
     }
 
     companion object {
-        val DATABASE_NAME = "TasteCompass"
-        val COLLECTION_NAMES = listOf(
-            "Restaurant"
-        )
+        private const val maxRetries = 3
+        private const val retryDelayMs = 2000L
+        private val logger: Logger = LoggerFactory.getLogger(this::class.java)
     }
 }
