@@ -23,10 +23,6 @@ import java.util.concurrent.ConcurrentHashMap
 open class MilvusConfig (
     private val milvusProperties: MilvusProperties
 ) {
-    private val maxRetries = 3
-    private val retryDelayMs = 2000L
-    private val logger: Logger = LoggerFactory.getLogger(this::class.java)
-
     @Bean
     open fun milvusClient(): MilvusClientV2 {
         return retry(maxRetries, retryDelayMs) {
@@ -38,10 +34,7 @@ open class MilvusConfig (
                     .build()
             )
 
-            COLLECTION_NAMES.forEach { collectionName ->
-                ensureCollectionExists(client, collectionName)
-                loadCollection(client, collectionName)
-            }
+            ensureCollectionExists(client, milvusProperties.collectionName)
 
             client
         }
@@ -112,9 +105,9 @@ open class MilvusConfig (
     }
 
     companion object {
-        val COLLECTION_NAMES = listOf(
-            "Restaurant"
-        )
+        private const val maxRetries = 3
+        private const val retryDelayMs = 2000L
+        private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
         fun getRestaurantFieldSchemas() = listOf(
 

@@ -1,7 +1,6 @@
 package com.tastecompass.data.common
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.stereotype.Component
 
 @ConfigurationProperties(prefix="mongo")
 class MongoProperties {
@@ -10,4 +9,6 @@ class MongoProperties {
     lateinit var password: String
     lateinit var host: String
     lateinit var options: String
+    lateinit var databaseName: String
+    lateinit var collectionName: String
 }
