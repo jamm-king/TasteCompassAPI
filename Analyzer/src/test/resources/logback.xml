@@ -5,7 +5,11 @@
         </encoder>
     </appender>
 
-    <root level="debug">
+    <root level="OFF">
         <appender-ref ref="STDOUT"/>
     </root>
+
+    <logger name="com.tastecompass.analyzer" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
 </configuration>
