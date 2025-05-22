@@ -142,6 +142,9 @@ class ControllerService(
             name = analysisResult.name,
             category = analysisResult.category ?: RestaurantProperty.CATEGORY.defaultValue as String,
             phone = analysisResult.phone ?: RestaurantProperty.PHONE.defaultValue as String,
+            x = analysisResult.x,
+            y = analysisResult.y,
+            reviews = listOf(review),
             address = analysisResult.address,
             businessDays = analysisResult.businessDays ?: RestaurantProperty.BUSINESS_DAYS.defaultValue as String,
             hasWifi = analysisResult.hasWifi ?: RestaurantProperty.HAS_WIFI.defaultValue as Boolean,
@@ -151,8 +154,6 @@ class ControllerService(
             maxPrice = analysisResult.maxPrice ?: RestaurantProperty.MAX_PRICE.defaultValue as Int,
             mood = listOf(analysisResult.mood),
             taste = listOf(analysisResult.taste),
-            x = analysisResult.x,
-            y = analysisResult.y
         )
     }
 
