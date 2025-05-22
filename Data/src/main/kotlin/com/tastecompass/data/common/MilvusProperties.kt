@@ -7,4 +7,5 @@ class MilvusProperties {
     lateinit var endpoint: String
     lateinit var token: String
     lateinit var collectionName: String
+    var vectorFiledNames: List<String> = mutableListOf()
 }
