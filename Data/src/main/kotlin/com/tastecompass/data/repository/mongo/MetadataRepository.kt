@@ -11,6 +11,7 @@ import com.mongodb.client.model.UpdateOptions
 import com.mongodb.client.model.Updates.combine
 import com.mongodb.client.model.Updates.set
 import com.mongodb.kotlin.client.MongoClient
+import com.tastecompass.data.common.MongoProperties
 import com.tastecompass.domain.entity.Metadata
 import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException
@@ -22,11 +23,12 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class MetadataRepository(
-    private val mongoClient: MongoClient
+    private val mongoClient: MongoClient,
+    private val mongoProperties: MongoProperties
 ): MongoRepository<Metadata> {
 
-    private val database = mongoClient.getDatabase(DATABASE_NAME)
-    private val collection = database.getCollection<Document>(COLLECTION_NAME)
+    private val database = mongoClient.getDatabase(mongoProperties.databaseName)
+    private val collection = database.getCollection<Document>(mongoProperties.collectionName)
 
     override suspend fun insert(
         entity: Metadata
@@ -96,7 +98,6 @@ class MetadataRepository(
             set(Metadata::y.name, entity.y),
             set(Metadata::reviews.name, entity.reviews),
             set(Metadata::businessDays.name, entity.businessDays),
-            set(Metadata::url.name, entity.url),
             set(Metadata::hasWifi.name, entity.hasWifi),
             set(Metadata::hasParking.name, entity.hasParking),
             set(Metadata::menus.name, entity.menus),
@@ -139,7 +140,6 @@ class MetadataRepository(
                         set(Metadata::y.name, entity.y),
                         set(Metadata::reviews.name, entity.reviews),
                         set(Metadata::businessDays.name, entity.businessDays),
-                        set(Metadata::url.name, entity.url),
                         set(Metadata::hasWifi.name, entity.hasWifi),
                         set(Metadata::hasParking.name, entity.hasParking),
                         set(Metadata::menus.name, entity.menus),
@@ -181,7 +181,6 @@ class MetadataRepository(
             set(Metadata::y.name, entity.y),
             set(Metadata::reviews.name, entity.reviews),
             set(Metadata::businessDays.name, entity.businessDays),
-            set(Metadata::url.name, entity.url),
             set(Metadata::hasWifi.name, entity.hasWifi),
             set(Metadata::hasParking.name, entity.hasParking),
             set(Metadata::menus.name, entity.menus),
@@ -219,7 +218,6 @@ class MetadataRepository(
                         set(Metadata::y.name, entity.y),
                         set(Metadata::reviews.name, entity.reviews),
                         set(Metadata::businessDays.name, entity.businessDays),
-                        set(Metadata::url.name, entity.url),
                         set(Metadata::hasWifi.name, entity.hasWifi),
                         set(Metadata::hasParking.name, entity.hasParking),
                         set(Metadata::menus.name, entity.menus),
@@ -384,8 +382,6 @@ class MetadataRepository(
     }
 
     companion object {
-        private const val DATABASE_NAME = "TasteCompass"
-        private const val COLLECTION_NAME = "Restaurant"
         private val logger: Logger = LoggerFactory.getLogger(this::class.java)
     }
 }

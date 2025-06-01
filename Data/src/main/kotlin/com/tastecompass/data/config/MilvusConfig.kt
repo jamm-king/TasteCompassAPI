@@ -5,10 +5,11 @@ import com.tastecompass.data.common.MilvusProperties
 import io.milvus.v2.client.MilvusClientV2
 import io.milvus.v2.client.ConnectConfig
 import io.milvus.v2.common.DataType
+import io.milvus.v2.common.IndexParam
 import io.milvus.v2.service.collection.request.CreateCollectionReq
 import io.milvus.v2.service.collection.request.HasCollectionReq
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import io.milvus.v2.service.index.request.CreateIndexReq
+import io.milvus.v2.service.index.request.ListIndexesReq
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -25,38 +26,42 @@ open class MilvusConfig (
 ) {
     @Bean
     open fun milvusClient(): MilvusClientV2 {
-        return retry(maxRetries, retryDelayMs) {
-            val client = MilvusClientV2(
-                ConnectConfig.builder()
-                    .uri(milvusProperties.endpoint)
-                    .token(milvusProperties.token)
-                    .connectTimeoutMs(10000)
-                    .build()
-            )
-
-            ensureCollectionExists(client, milvusProperties.collectionName)
-
-            client
-        }
-    }
-
-    private fun <T> retry(maxAttempts: Int, delayMs: Long, block: () -> T): T {
+        var client: MilvusClientV2? = null
         var attempt = 0
+
         while (true) {
             try {
-                return block()
+                client = MilvusClientV2(
+                    ConnectConfig.builder()
+                        .uri(milvusProperties.endpoint)
+                        .token(milvusProperties.token)
+                        .connectTimeoutMs(10000)
+                        .build()
+                )
+
+                ensureCollectionExists(client, milvusProperties.collectionName)
+                ensureIndexExists(client, milvusProperties.collectionName, milvusProperties.vectorFiledNames)
+                loadCollection(client, milvusProperties.collectionName)
+
+                return client
+
             } catch (ex: Exception) {
+                client?.close()
                 attempt++
-                if (attempt >= maxAttempts) throw ex
-                logger.error("Milvus Client connection failed. ${attempt}'th trying...")
-                runBlocking { delay(delayMs) }
+                if (attempt >= maxRetries) throw ex
+
+                logger.error("Milvus Client connection failed. ${attempt}’th trying…")
+                Thread.sleep(retryDelayMs)
             }
         }
     }
 
     private val collectionLocks = ConcurrentHashMap<String, Any>()
 
-    private fun ensureCollectionExists(client: MilvusClientV2, collectionName: String) {
+    private fun ensureCollectionExists(
+        client: MilvusClientV2,
+        collectionName: String
+    ) {
         val lock = collectionLocks.computeIfAbsent(collectionName) { Any() }
         synchronized(lock) {
             val hasCollection = client.hasCollection(
@@ -84,7 +89,49 @@ open class MilvusConfig (
         }
     }
 
-    private fun loadCollection(client: MilvusClientV2, collectionName: String) {
+    private fun ensureIndexExists(
+        client: MilvusClientV2,
+        collectionName: String,
+        vectorFieldNames: List<String>
+    ) {
+        val lock = collectionLocks.computeIfAbsent(collectionName) { Any() }
+        synchronized(lock) {
+            val existingIndexNames = client.listIndexes(
+                ListIndexesReq.builder()
+                    .collectionName(milvusProperties.collectionName)
+                    .build()
+            )
+
+            vectorFieldNames.forEach { fieldName ->
+                val hasIndex = existingIndexNames.any { indexName ->
+                    indexName.contains(fieldName, ignoreCase = true)
+                }
+
+                if(!hasIndex) {
+                    logger.info("Index on '$fieldName' not found. Creating...")
+                    val indexParam = IndexParam.builder()
+                        .fieldName(fieldName)
+                        .indexType(IndexParam.IndexType.AUTOINDEX)
+                        .metricType(IndexParam.MetricType.L2)
+                        .build()
+                    client.createIndex(
+                        CreateIndexReq.builder()
+                            .collectionName(milvusProperties.collectionName)
+                            .indexParams(listOf(indexParam))
+                            .build()
+                    )
+                    logger.info("Index on '$fieldName' created.")
+                } else {
+                    logger.info("Index for field '$fieldName' already exists.")
+                }
+            }
+        }
+    }
+
+    private fun loadCollection(
+        client: MilvusClientV2,
+        collectionName: String
+    ) {
         val lock = collectionLocks.computeIfAbsent(collectionName) { Any() }
         synchronized(lock) {
             try {
