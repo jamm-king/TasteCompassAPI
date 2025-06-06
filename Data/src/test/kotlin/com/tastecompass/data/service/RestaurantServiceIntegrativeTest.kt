@@ -130,6 +130,58 @@ class RestaurantServiceIntegrativeTest {
         assertEquals(testId1, result.id)
     }
 
+    @Test
+    fun `should hybrid search proximate entities with multiple vector fields`() = runBlocking {
+        val metadata1 = Metadata(
+            id = testId1,
+            status = AnalyzeStep.EMBEDDED,
+            name = "Alpha",
+            address = "Seoul"
+        )
+        val embedding1 = Embedding(
+            id = testId1,
+            moodVector = List(Constants.EMBEDDING_SIZE) { 0.1f },
+            tasteVector = List(Constants.EMBEDDING_SIZE) { 1.0f }
+        )
+        val restaurant1 = Restaurant.create(metadata1, embedding1)
+
+        val metadata2 = Metadata(
+            id = testId2,
+            status = AnalyzeStep.EMBEDDED,
+            name = "Bravo",
+            address = "Busan"
+        )
+        val embedding2 = Embedding(
+            id = testId2,
+            moodVector = List(Constants.EMBEDDING_SIZE) { 1.0f },
+            tasteVector = List(Constants.EMBEDDING_SIZE) { 0.1f }
+        )
+        val restaurant2 = Restaurant.create(metadata2, embedding2)
+
+        dataService.save(restaurant1)
+        dataService.save(restaurant2)
+        insertedIds.addAll(listOf(testId1, testId2))
+
+        Thread.sleep(1000)
+
+        val queryMood = List(Constants.EMBEDDING_SIZE) { 1.0f }
+        val queryTaste = List(Constants.EMBEDDING_SIZE) { 1.0f }
+        val fieldToVector = mapOf(
+            "moodVector" to queryMood,
+            "tasteVector" to queryTaste
+        )
+        val result: List<Restaurant> = dataService.hybridSearch(
+            fieldToVector = fieldToVector,
+            topK = 2
+        )
+        Thread.sleep(1000)
+
+        assertEquals(2, result.size)
+        val returnedIds = result.map { it.id }.toSet()
+        assertTrue(returnedIds.containsAll(listOf(testId1, testId2)))
+    }
+
+
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.simpleName)
     }

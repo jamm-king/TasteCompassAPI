@@ -4,10 +4,16 @@ import com.tastecompass.domain.entity.Embedding
 import com.tastecompass.data.exception.DataAccessException
 import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.exception.InvalidRequestException
+import io.milvus.common.clientenum.ConsistencyLevelEnum
+import io.milvus.grpc.SearchResults
+import io.milvus.param.R
 import io.milvus.v2.client.MilvusClientV2
+import io.milvus.v2.common.ConsistencyLevel
 import io.milvus.v2.exception.MilvusClientException
 import io.milvus.v2.service.vector.request.*
 import io.milvus.v2.service.vector.request.data.FloatVec
+import io.milvus.v2.service.vector.request.ranker.RRFRanker
+import io.milvus.v2.service.vector.response.SearchResp
 import kotlinx.coroutines.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,7 +23,6 @@ import org.springframework.stereotype.Repository
 class EmbeddingRepository(
     private val milvusClient: MilvusClientV2
 ): MilvusRepository<Embedding> {
-
     override suspend fun search(
         fieldName: String,
         topK: Int,
@@ -39,6 +44,44 @@ class EmbeddingRepository(
             } catch (e: MilvusClientException) {
                 logger.error("Failed to search restaurant embedding (filed: $fieldName, topK: $topK): ${e.message}")
 
+                throw DataAccessException.milvusAccessUnavailable()
+            }
+        }
+
+        entityListDeferred.await()
+    }
+
+    override suspend fun hybridSearch(
+        fieldToVector: Map<String, List<Float>>,
+        topK: Int
+    ): List<Embedding> = coroutineScope {
+        val searchRequests = fieldToVector.map { (fieldName, vector) ->
+            AnnSearchReq.builder()
+                .vectorFieldName(fieldName)
+                .vectors(listOf(FloatVec(vector)))
+                .params("{\"nprobe\": 10}")
+                .topK(topK)
+                .build()
+        }
+
+        val hybridReq = HybridSearchReq.builder()
+            .collectionName(COLLECTION_NAME)
+            .searchRequests(searchRequests)
+            .ranker(RRFRanker(20))
+            .topK(topK)
+            .consistencyLevel(ConsistencyLevel.BOUNDED)
+            .outFields(OUTPUT_FIELDS)
+            .build()
+
+        val entityListDeferred = async {
+            try {
+                val searchResp = milvusClient.hybridSearch(hybridReq)
+                val searchResult = searchResp.searchResults.first()
+                val entityList = searchResult.map { Embedding.fromMap(it.entity) }
+
+                entityList
+            } catch (e: MilvusClientException) {
+                logger.error("Failed to perform hybridSearch on Milvus: ${e.message}", e)
                 throw DataAccessException.milvusAccessUnavailable()
             }
         }
