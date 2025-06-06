@@ -1,8 +1,7 @@
 package com.tastecompass.embedding.service
 
-import com.tastecompass.domain.entity.Restaurant
+import com.tastecompass.embedding.dto.EmbeddingRequest
 import com.tastecompass.embedding.dto.EmbeddingResult
-import com.tastecompass.embedding.mapper.EmbeddingRequestMapper
 import com.tastecompass.openai.client.OpenAIClientWrapper
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -14,15 +13,13 @@ class EmbeddingServiceImpl(
     private val client: OpenAIClientWrapper
 ): EmbeddingService {
     override suspend fun embed(
-        restaurant: Restaurant
+        embeddingReq: EmbeddingRequest
     ): EmbeddingResult = coroutineScope {
         try {
-            val request = EmbeddingRequestMapper.fromRestaurant(restaurant)
+            val moodVectorDeferred = async { client.embed(embeddingReq.mood) }
+            val tasteVectorDeferred = async { client.embed(embeddingReq.taste) }
 
-            val moodVectorDeferred = async { client.embed(request.mood) }
-            val tasteVectorDeferred = async { client.embed(request.taste) }
-
-            logger.debug("Embedding... {}", restaurant)
+            logger.debug("Embedding... {}", embeddingReq)
 
             val moodVector = moodVectorDeferred.await()
             val tasteVector = tasteVectorDeferred.await()
