@@ -13,7 +13,7 @@ plugins {
 rootProject.name = "tasteCompass"
 include("Application")
 include("Controller")
-include("Search")
+include("Service")
 include("Analyzer")
 include("Embedding")
 include("Data")
