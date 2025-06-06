@@ -3,6 +3,7 @@ package com.tastecompass.analyzer.service
 import com.google.gson.Gson
 import com.tastecompass.analyzer.dto.FullAnalysisResult
 import com.tastecompass.analyzer.dto.OpenAIAnalysisResult
+import com.tastecompass.analyzer.dto.QueryAnalysisResult
 import com.tastecompass.analyzer.prompt.PromptTemplate
 import com.tastecompass.domain.entity.Review
 import com.tastecompass.kakao.client.KakaoMapClient
@@ -73,6 +74,30 @@ class AnalyzerServiceImpl(
         )
     }
 
+    override suspend fun analyze(
+        query: String
+    ): QueryAnalysisResult = coroutineScope {
+        logger.debug("Starting analysis for query")
+        logger.debug("Query text:\n{}", query)
+
+        val rawJson = try {
+            val prompt = PromptTemplate.forQueryAnalysis(query)
+            logger.debug("Generated prompt:\n{}", prompt)
+
+            openaiClient.chat(prompt)
+        } catch (e: Exception) {
+            logger.error("Failed to receive response from OpenAI: {}", e.message)
+            throw e
+        }
+
+        try {
+            gson.fromJson(rawJson, QueryAnalysisResult::class.java).also { it.validate(rawJson) }
+        } catch(e: Exception) {
+            logger.error("Failed to parse analysis result: {}", e.message)
+            throw e
+        }
+    }
+
     private fun String.filterBranchInfo(): String {
         val noParen = this.trim().replace(Regex("\\s*\\([^)]*\\)\$"), "")
         val tokens = noParen.split("\\s+".toRegex())
@@ -84,8 +109,14 @@ class AnalyzerServiceImpl(
     }
 
     fun OpenAIAnalysisResult.validate(rawJson: String) {
-        if (name.isBlank() || address.isBlank() || taste.isBlank() || mood.isBlank()) {
-            throw IllegalArgumentException("Missing required fields in analysis result: $rawJson")
+        if(name.isBlank() || address.isBlank() || taste.isBlank() || mood.isBlank()) {
+            throw RuntimeException("Missing required fields in analysis result: $rawJson")
+        }
+    }
+
+    fun QueryAnalysisResult.validate(rawJson: String) {
+        if(taste.isNullOrBlank() && mood.isNullOrBlank()) {
+            throw RuntimeException("At least one field is required: $rawJson")
         }
     }
 
