@@ -1,7 +1,6 @@
 package com.tastecompass.embedding.service
 
-import com.tastecompass.domain.common.AnalyzeStep
-import com.tastecompass.domain.entity.Restaurant
+import com.tastecompass.embedding.dto.EmbeddingRequest
 import com.tastecompass.openai.client.OpenAIClientWrapperImpl
 import com.tastecompass.openai.config.OpenAIConfig
 import kotlinx.coroutines.runBlocking
@@ -22,14 +21,12 @@ class EmbeddingServiceTest {
 
     @Test
     fun `should embed restaurant`(): Unit = runBlocking {
-        val restaurant = Restaurant.create(
-            id = "test",
-            status = AnalyzeStep.ANALYZED,
-            mood = listOf("힙한 느낌"),
-            taste = listOf("담백하게 맛있다")
+        val embeddingReq = EmbeddingRequest(
+            mood = "힙한 느낌",
+            taste = "담백하게 맛있다"
         )
 
-        val embeddingResult = embeddingService.embed(restaurant)
+        val embeddingResult = embeddingService.embed(embeddingReq)
         logger.info("mood vector: ${embeddingResult.moodVector}")
         logger.info("taste vector: ${embeddingResult.tasteVector}")
     }
