@@ -109,6 +109,25 @@ class RestaurantService(
         }
     }
 
+    override suspend fun hybridSearch(
+        fieldToVector: Map<String, List<Float>>,
+        topK: Int
+    ): List<Restaurant> = coroutineScope {
+        try {
+            val hybridResults = milvusRepo.hybridSearch(fieldToVector, topK)
+            val ids = hybridResults.map { it.id }
+            val metadataMap = mongoRepo.get(ids).associateBy { it.id }
+
+            hybridResults.mapNotNull { embedding ->
+                val meta = metadataMap[embedding.id]
+                meta?.let { Restaurant.create(it, embedding) }
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to hybridSearch restaurants: ${e.message}", e)
+            throw e
+        }
+    }
+
     override suspend fun getById(
         id: String
     ): Restaurant = coroutineScope {
