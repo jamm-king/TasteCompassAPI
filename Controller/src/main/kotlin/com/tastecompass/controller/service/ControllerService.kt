@@ -10,6 +10,7 @@ import com.tastecompass.domain.entity.Restaurant
 import com.tastecompass.domain.entity.RestaurantMenu
 import com.tastecompass.domain.entity.RestaurantProperty
 import com.tastecompass.domain.entity.Review
+import com.tastecompass.embedding.dto.EmbeddingRequest
 import com.tastecompass.embedding.dto.EmbeddingResult
 import com.tastecompass.embedding.service.EmbeddingService
 import jakarta.annotation.PreDestroy
@@ -110,7 +111,11 @@ class ControllerService(
         analyzedFlow.collect { restaurant ->
             try {
                 logger.info("Embedding restaurant with id ${restaurant.id}")
-                val embeddingResult = embeddingService.embed(restaurant)
+                val embeddingReq = EmbeddingRequest(
+                    taste = restaurant.taste.last(),
+                    mood = restaurant.mood.last()
+                )
+                val embeddingResult = embeddingService.embed(embeddingReq)
                 val embedded = updateRestaurant(restaurant, embeddingResult)
                 embeddedFlow.emit(embedded)
             } catch (e: Exception) {
