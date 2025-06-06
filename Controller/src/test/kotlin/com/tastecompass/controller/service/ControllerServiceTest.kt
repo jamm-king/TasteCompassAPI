@@ -7,6 +7,7 @@ import com.tastecompass.data.exception.EntityNotFoundException
 import com.tastecompass.data.service.DataService
 import com.tastecompass.domain.entity.Restaurant
 import com.tastecompass.domain.entity.Review
+import com.tastecompass.embedding.dto.EmbeddingRequest
 import com.tastecompass.embedding.dto.EmbeddingResult
 import com.tastecompass.embedding.service.EmbeddingService
 import kotlinx.coroutines.runBlocking
@@ -40,6 +41,12 @@ class ControllerServiceTest {
     lateinit var controllerService: ControllerService
 
     private val dummyText = "분위기가 좋고, 달달한 디저트가 맛있는 카페예요."
+    val review = Review(
+        source = "tistory",
+        url = "https://tistory.com/test",
+        address = "포항시 남구 이인로 90",
+        text = dummyText
+    )
     private val analysisResult = FullAnalysisResult(
         name = "TestRestaurant",
         taste = "달콤함",
@@ -48,6 +55,10 @@ class ControllerServiceTest {
         x = 127.00,
         y = 35.00
     )
+    private val embeddingReq = EmbeddingRequest(
+        taste = "달콤함",
+        mood = "편안함"
+    )
     private val embeddingResult = EmbeddingResult(
         moodVector = List(1536) { 0.1f },
         tasteVector = List(1536) { 0.2f }
@@ -55,7 +66,7 @@ class ControllerServiceTest {
 
     @BeforeEach
     fun setup(): Unit = runBlocking {
-        whenever(analyzerService.analyze(any())).thenReturn(analysisResult)
+        whenever(analyzerService.analyze(review)).thenReturn(analysisResult)
         whenever(idGenerator.generate(any())).thenReturn("123")
         whenever(dataService.getById("123")).thenThrow(EntityNotFoundException("Not found"))
         whenever(embeddingService.embed(any())).thenReturn(embeddingResult)
@@ -68,7 +79,7 @@ class ControllerServiceTest {
         val embedLatch = CountDownLatch(1)
         val saveLatch = CountDownLatch(1)
 
-        whenever(analyzerService.analyze(any())).thenAnswer {
+        whenever(analyzerService.analyze(review)).thenAnswer {
             analyzeLatch.countDown()
             analysisResult
         }
@@ -79,13 +90,6 @@ class ControllerServiceTest {
         whenever(dataService.save(any())).thenAnswer {
             saveLatch.countDown()
         }
-
-        val review = Review(
-            source = "tistory",
-            url = "https://tistory.com/test",
-            address = "포항시 남구 이인로 90",
-            text = dummyText
-        )
 
         controllerService.receiveReviewData(review)
 
