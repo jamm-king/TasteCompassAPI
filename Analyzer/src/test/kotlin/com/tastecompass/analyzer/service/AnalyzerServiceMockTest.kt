@@ -3,6 +3,7 @@ package com.tastecompass.analyzer.service
 import com.google.gson.Gson
 import com.tastecompass.analyzer.dto.FullAnalysisResult
 import com.tastecompass.analyzer.dto.OpenAIAnalysisResult
+import com.tastecompass.analyzer.dto.QueryAnalysisResult
 import com.tastecompass.domain.entity.Review
 import com.tastecompass.kakao.client.KakaoMapClient
 import com.tastecompass.kakao.dto.GeocodeResult
@@ -11,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -122,6 +124,25 @@ class AnalyzerServiceMockTest {
         }
 
         // assertTrue(exception.message.contains("Missing required fields"))
+        verify(openaiClient).chat(any())
+    }
+
+    @Test
+    fun `should analyze query and return valid result`(): Unit = runBlocking {
+        // given
+        val queryText = "포항에서 회 먹을 건데 너무 시끄럽지 않은 곳으로 알려줘"
+        val expectedQueryAnalysisResult = QueryAnalysisResult(
+            mood = "조용함"
+        )
+        val responseJson = gson.toJson(expectedQueryAnalysisResult)
+
+        whenever(openaiClient.chat(any())).thenReturn(responseJson)
+
+        // when
+        val result = analyzerService.analyze(queryText)
+
+        // then
+        assertEquals(expectedQueryAnalysisResult, result)
         verify(openaiClient).chat(any())
     }
 }

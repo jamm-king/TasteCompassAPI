@@ -120,6 +120,9 @@ class AnalyzerServiceTest {
         영통 최고 존맛집으로 강추강추!!
         [출처] 수원 영통 인생 카이센동 맛집 ‘좋은소식’ 내돈내산 후기|작성자 안전하자용
     """.trimIndent()
+    private val query = """
+        포항에서 회 먹을 건데 너무 시끄럽지 않은 곳으로 알려줘
+    """.trimIndent()
 
     @Test
     fun `should extract attributes from review`() = runBlocking {
@@ -131,5 +134,11 @@ class AnalyzerServiceTest {
         )
         val result = analyzerService.analyze(review)
         logger.info(result.toString())
+    }
+    @Test
+    fun `should extract attributes from query`() = runBlocking {
+        val result = analyzerService.analyze(query)
+        logger.info("taste: ${result.taste ?: ""}")
+        logger.info("mood: ${result.mood ?: ""}")
     }
 }
