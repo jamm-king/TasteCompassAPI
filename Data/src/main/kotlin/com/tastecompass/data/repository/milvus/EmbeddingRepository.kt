@@ -384,7 +384,8 @@ class EmbeddingRepository(
             "minPrice",
             "maxPrice",
             "moodVector",
-            "tasteVector"
+            "tasteVector",
+            "categoryVector"
         )
         private const val BATCH_SIZE = 100
         private val logger: Logger = LoggerFactory.getLogger(this::class.java)

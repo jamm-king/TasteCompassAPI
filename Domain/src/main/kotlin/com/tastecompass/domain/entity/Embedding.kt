@@ -16,16 +16,18 @@ data class Embedding(
     val maxPrice: Int = RestaurantProperty.MAX_PRICE.defaultValue as Int,
     val moodVector: List<Float> = RestaurantProperty.MOOD_VECTOR.defaultValue as List<Float>,
     val tasteVector: List<Float> = RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>,
+    val categoryVector: List<Float> = RestaurantProperty.CATEGORY_VECTOR.defaultValue as List<Float>
 ) {
     constructor(
-        metadata: Metadata, moodVector: List<Float>?, tasteVector: List<Float>?
+        metadata: Metadata, moodVector: List<Float>?, tasteVector: List<Float>?, categoryVector: List<Float>?
     ) : this(
         id = metadata.id, category = metadata.category, address = metadata.address,
         x = metadata.x, y = metadata.y, businessDays = metadata.businessDays,
         hasWifi = metadata.hasWifi, hasParking = metadata.hasParking,
         minPrice = metadata.minPrice, maxPrice = metadata.maxPrice,
         moodVector = moodVector ?: RestaurantProperty.MOOD_VECTOR.defaultValue as List<Float>,
-        tasteVector = tasteVector ?: RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>
+        tasteVector = tasteVector ?: RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>,
+        categoryVector = categoryVector ?: RestaurantProperty.CATEGORY_VECTOR.defaultValue as List<Float>
     )
 
     fun update(
@@ -39,7 +41,8 @@ data class Embedding(
         minPrice: Int? = null,
         maxPrice: Int? = null,
         moodVector: List<Float>? = null,
-        tasteVector: List<Float>? = null
+        tasteVector: List<Float>? = null,
+        categoryVector: List<Float>? = null
     ): Embedding {
         return copy(
             category = category ?: this.category,
@@ -52,7 +55,8 @@ data class Embedding(
             minPrice = minPrice ?: this.minPrice,
             maxPrice = maxPrice ?: this.maxPrice,
             moodVector = moodVector ?: this.moodVector,
-            tasteVector = tasteVector ?: this.tasteVector
+            tasteVector = tasteVector ?: this.tasteVector,
+            categoryVector = categoryVector ?: this.categoryVector
         )
     }
 
@@ -74,6 +78,9 @@ data class Embedding(
             add(RestaurantProperty.TASTE_VECTOR.key, JsonArray().apply {
                 tasteVector.forEach { add(it) }
             })
+            add(RestaurantProperty.CATEGORY_VECTOR.key, JsonArray().apply {
+                categoryVector.forEach { add(it) }
+            })
         }
     }
 
@@ -91,7 +98,8 @@ data class Embedding(
                 minPrice = map[RestaurantProperty.MIN_PRICE.key] as? Int ?: RestaurantProperty.MIN_PRICE.defaultValue as Int,
                 maxPrice = map[RestaurantProperty.MAX_PRICE.key] as? Int ?: RestaurantProperty.MAX_PRICE.defaultValue as Int,
                 moodVector = map[RestaurantProperty.MOOD_VECTOR.key] as? List<Float> ?: RestaurantProperty.MOOD_VECTOR.defaultValue as List<Float>,
-                tasteVector = map[RestaurantProperty.TASTE_VECTOR.key] as? List<Float> ?: RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>
+                tasteVector = map[RestaurantProperty.TASTE_VECTOR.key] as? List<Float> ?: RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>,
+                categoryVector = map[RestaurantProperty.CATEGORY_VECTOR.key] as? List<Float> ?: RestaurantProperty.CATEGORY_VECTOR.defaultValue as List<Float>
             )
         }
     }

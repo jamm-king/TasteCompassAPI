@@ -196,6 +196,10 @@ open class MilvusConfig (
 
             CreateCollectionReq.FieldSchema.builder()
                 .name("tasteVector").dataType(DataType.FloatVector)
+                .dimension(Constants.EMBEDDING_SIZE).build(),
+
+            CreateCollectionReq.FieldSchema.builder()
+                .name("categoryVector").dataType(DataType.FloatVector)
                 .dimension(Constants.EMBEDDING_SIZE).build()
         )
     }
