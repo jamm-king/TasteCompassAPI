@@ -61,7 +61,8 @@ class ControllerServiceTest {
     )
     private val embeddingResult = EmbeddingResult(
         moodVector = List(1536) { 0.1f },
-        tasteVector = List(1536) { 0.2f }
+        tasteVector = List(1536) { 0.2f },
+        categoryVector = List(1536) { 0.3f }
     )
 
     @BeforeEach
