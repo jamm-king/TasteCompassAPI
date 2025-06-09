@@ -113,7 +113,8 @@ class ControllerService(
                 logger.info("Embedding restaurant with id ${restaurant.id}")
                 val embeddingReq = EmbeddingRequest(
                     taste = restaurant.taste.last(),
-                    mood = restaurant.mood.last()
+                    mood = restaurant.mood.last(),
+                    category = restaurant.category
                 )
                 val embeddingResult = embeddingService.embed(embeddingReq)
                 val embedded = updateRestaurant(restaurant, embeddingResult)
@@ -180,6 +181,7 @@ class ControllerService(
         return restaurant
             .updateMoodVector(embeddingResult.moodVector)
             .updateTasteVector(embeddingResult.tasteVector)
+            .update(categoryVector = embeddingResult.categoryVector)
     }
 }
 
