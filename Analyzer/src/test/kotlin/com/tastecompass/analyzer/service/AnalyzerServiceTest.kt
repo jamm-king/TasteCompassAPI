@@ -26,7 +26,7 @@ class AnalyzerServiceTest {
     @Autowired
     lateinit var analyzerService: AnalyzerService
 
-    private val logger = LoggerFactory.getLogger(this::class.simpleName)
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private val text = """
         수원 영통 맛집 탑3 안에 들지 않을까 싶은,,
         진심 존맛 카이센동을 판매하는, 내 최애 식당인
@@ -138,7 +138,8 @@ class AnalyzerServiceTest {
     @Test
     fun `should extract attributes from query`() = runBlocking {
         val result = analyzerService.analyze(query)
-        logger.info("taste: ${result.taste ?: ""}")
-        logger.info("mood: ${result.mood ?: ""}")
+        println("taste: ${result.taste ?: ""}")
+        println("mood: ${result.mood ?: ""}")
+        println("category: ${result.category ?: ""}")
     }
 }

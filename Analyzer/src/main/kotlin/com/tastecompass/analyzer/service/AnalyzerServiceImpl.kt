@@ -115,7 +115,7 @@ class AnalyzerServiceImpl(
     }
 
     fun QueryAnalysisResult.validate(rawJson: String) {
-        if(taste.isNullOrBlank() && mood.isNullOrBlank()) {
+        if(taste.isNullOrBlank() && mood.isNullOrBlank() && category.isNullOrBlank()) {
             throw RuntimeException("At least one field is required: $rawJson")
         }
     }

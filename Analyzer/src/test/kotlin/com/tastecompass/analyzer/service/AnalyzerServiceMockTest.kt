@@ -132,7 +132,8 @@ class AnalyzerServiceMockTest {
         // given
         val queryText = "포항에서 회 먹을 건데 너무 시끄럽지 않은 곳으로 알려줘"
         val expectedQueryAnalysisResult = QueryAnalysisResult(
-            mood = "조용함"
+            mood = "조용함",
+            category = "회"
         )
         val responseJson = gson.toJson(expectedQueryAnalysisResult)
 
