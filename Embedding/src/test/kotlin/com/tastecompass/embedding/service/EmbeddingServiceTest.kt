@@ -22,8 +22,9 @@ class EmbeddingServiceTest {
     @Test
     fun `should embed restaurant`(): Unit = runBlocking {
         val embeddingReq = EmbeddingRequest(
-            mood = "힙한 느낌",
-            taste = "담백하게 맛있다"
+            mood = "시끄럽지 않고 조용합니다",
+            taste = "담백하게 맛있어요",
+            category = "한식"
         )
 
         val embeddingResult = embeddingService.embed(embeddingReq)
