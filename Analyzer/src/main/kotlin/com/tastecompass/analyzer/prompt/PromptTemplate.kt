@@ -43,7 +43,8 @@ object PromptTemplate {
             스키마:
             {
               "taste": string,           // 맛 설명
-              "mood": string             // 분위기 설명
+              "mood": string,            // 분위기 설명
+              "category": string         // 음식 종류
             }
         </system>
         <user>
