@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController
 class ReviewController(
     private val controllerService: ControllerService
 ) {
-
     @PostMapping
     fun receiveReview(
         @RequestBody review: Review

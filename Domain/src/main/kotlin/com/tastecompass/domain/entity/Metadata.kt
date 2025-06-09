@@ -88,6 +88,25 @@ data class Metadata(
 
     companion object {
         fun fromDocument(document: Document): Metadata {
+            val rawReviews = document.getList("reviews", Document::class.java)
+            val reviews = rawReviews.map { doc ->
+                Review(
+                    source  = doc.getString("source"),
+                    url     = doc.getString("url"),
+                    address = doc.getString("address"),
+                    text    = doc.getString("text")
+                )
+            }
+            val rawMenus = document.getList("menus", Document::class.java)
+            val menus = rawMenus.map { doc ->
+                RestaurantMenu(
+                    name     = doc.getString("name"),
+                    price    = doc.getInteger("price"),
+                )
+            }
+            val mood  = document.getList("mood", String::class.java)
+            val taste = document.getList("taste", String::class.java)
+
             return Metadata(
                 id = document["id"] as String,
                 status = AnalyzeStep.valueOf(document.getString("status")),
@@ -98,15 +117,15 @@ data class Metadata(
                 address = document["address"] as? String ?: RestaurantProperty.ADDRESS.defaultValue as String,
                 x = document["x"] as? Double ?: RestaurantProperty.X.defaultValue as Double,
                 y = document["y"] as? Double ?: RestaurantProperty.Y.defaultValue as Double,
-                reviews = document["reviews"] as? List<Review> ?: RestaurantProperty.REVIEWS.defaultValue as List<Review>,
+                reviews = reviews,
                 businessDays = document["businessDays"] as? String ?: RestaurantProperty.BUSINESS_DAYS.defaultValue as String,
                 hasWifi = document["hasWifi"] as? Boolean ?: RestaurantProperty.HAS_WIFI.defaultValue as Boolean,
                 hasParking = document["hasParking"] as? Boolean ?: RestaurantProperty.HAS_PARKING.defaultValue as Boolean,
-                menus = document["menus"] as? List<RestaurantMenu> ?: RestaurantProperty.MENUS.defaultValue as List<RestaurantMenu>,
+                menus = menus,
                 minPrice = document["minPrice"] as? Int ?: RestaurantProperty.MIN_PRICE.defaultValue as Int,
                 maxPrice = document["maxPrice"] as? Int ?: RestaurantProperty.MAX_PRICE.defaultValue as Int,
-                mood = document["mood"] as? List<String> ?: RestaurantProperty.MOOD.defaultValue as List<String>,
-                taste = document["taste"] as? List<String> ?: RestaurantProperty.TASTE.defaultValue as List<String>
+                mood = mood,
+                taste = taste
             )
         }
     }
