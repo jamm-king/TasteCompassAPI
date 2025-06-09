@@ -2,6 +2,7 @@ package com.tastecompass.openai.client
 
 import com.openai.client.OpenAIClient
 import com.openai.models.chat.completions.ChatCompletionCreateParams
+import com.openai.models.ChatModel
 import com.openai.models.embeddings.EmbeddingCreateParams
 import com.openai.models.embeddings.EmbeddingModel
 import com.tastecompass.domain.common.Constants
@@ -18,7 +19,7 @@ class OpenAIClientWrapperImpl(
         return try {
             val params = ChatCompletionCreateParams.builder()
                 .addUserMessage(prompt)
-                .model(openaiProperties.chatModel)
+                .model(ChatModel.GPT_4_TURBO)
                 .build()
             val chatCompletion = openaiClient.chat().completions().create(params)
 
@@ -33,7 +34,7 @@ class OpenAIClientWrapperImpl(
         return try {
             val params = EmbeddingCreateParams.builder()
                 .input(text)
-                .model(EmbeddingModel.TEXT_EMBEDDING_3_SMALL)
+                .model(EmbeddingModel.TEXT_EMBEDDING_3_LARGE)
                 .dimensions(Constants.EMBEDDING_SIZE.toLong())
                 .build();
             val embedding = openaiClient.embeddings().create(params)
