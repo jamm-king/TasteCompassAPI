@@ -38,8 +38,8 @@ class SearchServiceImpl(
             )
 
             val fieldToVector: Map<String, List<Float>> = mapOf(
-                "taste" to embeddingResult.tasteVector,
-                "mood"  to embeddingResult.moodVector
+                "tasteVector" to embeddingResult.tasteVector,
+                "moodVector"  to embeddingResult.moodVector
             )
 
             val searchResults: List<Restaurant> =
