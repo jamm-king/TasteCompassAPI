@@ -9,6 +9,7 @@ enum class RestaurantProperty(val key: String, val defaultValue: Any) {
     SOURCE("source", "N/A"),
     NAME("name", "N/A"),
     CATEGORY("category", "N/A"),
+    CATEGORY_VECTOR("categoryVector", List(Constants.EMBEDDING_SIZE) { 0.0f }),
     PHONE("phone", "N/A"),
     ADDRESS("address", "N/A"),
     X("x", 0.0),
