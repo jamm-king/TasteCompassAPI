@@ -18,15 +18,18 @@ class EmbeddingServiceImpl(
         try {
             val moodVectorDeferred = async { client.embed(embeddingReq.mood) }
             val tasteVectorDeferred = async { client.embed(embeddingReq.taste) }
+            val categoryVectorDeferred = async { client.embed(embeddingReq.category) }
 
             logger.debug("Embedding... {}", embeddingReq)
 
             val moodVector = moodVectorDeferred.await()
             val tasteVector = tasteVectorDeferred.await()
+            val categoryVector = categoryVectorDeferred.await()
 
             EmbeddingResult(
                 moodVector = moodVector.map { it.toFloat() },
-                tasteVector = tasteVector.map { it.toFloat() }
+                tasteVector = tasteVector.map { it.toFloat() },
+                categoryVector = categoryVector.map { it.toFloat() }
             )
         } catch(e: Exception) {
             logger.error("Failed to embed restaurant: ${e.message}")

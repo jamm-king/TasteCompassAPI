@@ -64,6 +64,9 @@ data class Restaurant(
     val tasteVector: List<Float>
         get() = embedding?.tasteVector ?: RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>
 
+    val categoryVector: List<Float>
+        get() = embedding?.categoryVector ?: RestaurantProperty.CATEGORY_VECTOR.defaultValue as List<Float>
+
     fun update(
         status: AnalyzeStep? = null,
         source: String? = null,
@@ -83,7 +86,8 @@ data class Restaurant(
         mood: List<String>? = null,
         taste: List<String>? = null,
         moodVector: List<Float>? = null,
-        tasteVector: List<Float>? = null
+        tasteVector: List<Float>? = null,
+        categoryVector: List<Float>? = null
     ) : Restaurant {
         var newMetadata = metadata.update(
             status = status, source = source, name = name, category = category,
@@ -94,10 +98,10 @@ data class Restaurant(
         val newEmbedding = embedding?.update(
             category = category, address = address, x = x, y = y, businessDays = businessDays,
             hasWifi = hasWifi, hasParking = hasParking, minPrice = minPrice, maxPrice = maxPrice,
-            moodVector =  moodVector, tasteVector = tasteVector
-        ) ?: if(moodVector != null || tasteVector != null) {
+            moodVector =  moodVector, tasteVector = tasteVector, categoryVector = categoryVector
+        ) ?: if(moodVector != null || tasteVector != null || categoryVector != null) {
             newMetadata = newMetadata.update(status = AnalyzeStep.EMBEDDED)
-            Embedding(metadata = metadata, moodVector = moodVector, tasteVector = tasteVector)
+            Embedding(metadata = metadata, moodVector = moodVector, tasteVector = tasteVector, categoryVector = categoryVector)
         }
         else null
 
@@ -226,7 +230,8 @@ data class Restaurant(
             mood: List<String> = RestaurantProperty.MOOD.defaultValue as List<String>,
             taste: List<String> = RestaurantProperty.TASTE.defaultValue as List<String>,
             moodVector: List<Float> = RestaurantProperty.MOOD_VECTOR.defaultValue as List<Float>,
-            tasteVector: List<Float> = RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>
+            tasteVector: List<Float> = RestaurantProperty.TASTE_VECTOR.defaultValue as List<Float>,
+            categoryVector: List<Float> = RestaurantProperty.CATEGORY_VECTOR.defaultValue as List<Float>
         ): Restaurant {
             val metadata = Metadata(
                 id = id, status = status, source = source, name = name, category = category,
@@ -237,7 +242,8 @@ data class Restaurant(
             val embedding = Embedding(
                 metadata = metadata,
                 moodVector = moodVector,
-                tasteVector = tasteVector
+                tasteVector = tasteVector,
+                categoryVector = categoryVector
             )
 
             return Restaurant(metadata = metadata, embedding = embedding)
