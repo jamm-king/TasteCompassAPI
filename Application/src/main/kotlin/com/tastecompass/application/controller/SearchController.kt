@@ -15,7 +15,10 @@ class SearchController(
 ) {
     @GetMapping
     suspend fun search(
-        @RequestParam q: String?
+        @RequestParam q: String?,
+        @RequestParam(required = false, defaultValue = "1.0") tasteWeight: Float,
+        @RequestParam(required = false, defaultValue = "1.0") categoryWeight: Float,
+        @RequestParam(required = false, defaultValue = "1.0") moodWeight: Float
     ): ResponseEntity<Any> {
         if (q.isNullOrBlank()) {
             return ResponseEntity
@@ -24,7 +27,13 @@ class SearchController(
         }
 
         return try {
-            val results: List<Restaurant> = searchService.search(q.trim(), 9)
+            val results: List<Restaurant> = searchService.search(
+                query = q.trim(),
+                topK = 9,
+                tasteWeight = tasteWeight,
+                categoryWeight = categoryWeight,
+                moodWeight = moodWeight
+            )
             ResponseEntity.ok(results)
         } catch (e: IllegalArgumentException) {
             ResponseEntity.badRequest().body(e.message ?: "Wrong request.")
