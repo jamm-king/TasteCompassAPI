@@ -135,11 +135,15 @@ class AnalyzerServiceTest {
         val result = analyzerService.analyze(review)
         logger.info(result.toString())
     }
+
     @Test
     fun `should extract attributes from query`() = runBlocking {
         val result = analyzerService.analyze(query)
-        println("taste: ${result.taste ?: ""}")
-        println("mood: ${result.mood ?: ""}")
-        println("category: ${result.category ?: ""}")
+
+        println("taste: ${result.taste ?: ""} (confidence: ${result.tasteConfidence ?: 0f})")
+        println("mood: ${result.mood ?: ""} (confidence: ${result.moodConfidence ?: 0f})")
+        println("category: ${result.category ?: ""} (confidence: ${result.categoryConfidence ?: 0f})")
+        println("intent: ${result.intent ?: ""}")
     }
+
 }
