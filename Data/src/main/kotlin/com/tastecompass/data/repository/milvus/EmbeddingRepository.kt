@@ -94,11 +94,21 @@ class EmbeddingRepository(
             for ((fieldResult, fieldName) in searchResultsPerField) {
                 val weight = fieldToWeight[fieldName] ?: 1.0f
 
+                logger.debug("Applying weight for field '{}': {}", fieldName, weight)
+
+                fieldResult.entries.sortedByDescending { it.value }.take(5).forEachIndexed { idx, entry ->
+                    logger.debug(
+                        "Field '{}' top {} → id='{}', similarity={}, weightedScore={}",
+                        fieldName, idx + 1, entry.key, entry.value, entry.value * weight
+                    )
+                }
+
                 for ((id, similarity) in fieldResult) {
                     val weightedScore = similarity * weight
                     idToScoreMap[id] = idToScoreMap.getOrDefault(id, 0f) + weightedScore
                 }
             }
+
 
             val topIds = idToScoreMap.entries
                 .sortedByDescending { it.value }
