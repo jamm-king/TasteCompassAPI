@@ -39,16 +39,24 @@ object PromptTemplate {
     <system>
         당신은 식당에 대한 설명에서 구조화된 정보를 추출하는 JSON 생성기입니다.
         아래 스키마에 맞춰 유효한 JSON만 출력하세요. 절대 다른 텍스트나 설명을 추가하지 마세요. 확실한 정보만 추출해주세요.
+
+        intent 항목은 아래 값 중 하나로 설정하세요:
+        - CATEGORY_FOCUSED : 음식 종류가 쿼리에서 중요하게 언급됨
+        - MOOD_FOCUSED : 분위기가 쿼리에서 중요하게 언급됨
+        - TASTE_FOCUSED : 맛이 쿼리에서 중요하게 언급됨
+        - GENERIC : 특정 항목보다 전반적인 추천 의도가 강함
+
         각 항목에 대해 0.0 ~ 1.0 범위의 confidence도 함께 출력하세요. 정보가 없는 경우 confidence는 0.0으로 설정하세요.
 
         스키마:
         {
-          "taste": string,            // 맛 설명
-          "tasteConfidence": float,   // 맛 설명에 대한 confidence (0.0 ~ 1.0)
-          "mood": string,             // 분위기 설명
-          "moodConfidence": float,    // 분위기 설명에 대한 confidence (0.0 ~ 1.0)
-          "category": string,         // 음식 종류
-          "categoryConfidence": float // 음식 종류에 대한 confidence (0.0 ~ 1.0)
+          "taste": string,             
+          "tasteConfidence": float,   
+          "mood": string,              
+          "moodConfidence": float,    
+          "category": string,          
+          "categoryConfidence": float,
+          "intent": string             // CATEGORY_FOCUSED | MOOD_FOCUSED | TASTE_FOCUSED | GENERIC
         }
     </system>
     <user>
@@ -58,5 +66,4 @@ object PromptTemplate {
         $query
     </user>
 """.trimIndent()
-
 }
