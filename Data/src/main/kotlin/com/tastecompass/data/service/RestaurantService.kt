@@ -111,10 +111,11 @@ class RestaurantService(
 
     override suspend fun hybridSearch(
         fieldToVector: Map<String, List<Float>>,
+        fieldToWeight: Map<String, Float>,
         topK: Int
     ): List<Restaurant> = coroutineScope {
         try {
-            val hybridResults = milvusRepo.hybridSearch(fieldToVector, topK)
+            val hybridResults = milvusRepo.hybridSearch(fieldToVector, fieldToWeight, topK)
             val ids = hybridResults.map { it.id }
             val metadataMap = mongoRepo.get(ids).associateBy { it.id }
 
@@ -127,6 +128,7 @@ class RestaurantService(
             throw e
         }
     }
+
 
     override suspend fun getById(
         id: String

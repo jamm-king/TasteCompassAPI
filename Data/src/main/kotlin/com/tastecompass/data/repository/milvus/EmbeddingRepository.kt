@@ -23,6 +23,7 @@ import org.springframework.stereotype.Repository
 class EmbeddingRepository(
     private val milvusClient: MilvusClientV2
 ): MilvusRepository<Embedding> {
+
     override suspend fun search(
         fieldName: String,
         topK: Int,
@@ -53,40 +54,65 @@ class EmbeddingRepository(
 
     override suspend fun hybridSearch(
         fieldToVector: Map<String, List<Float>>,
+        fieldToWeight: Map<String, Float>,
         topK: Int
     ): List<Embedding> = coroutineScope {
-        val searchRequests = fieldToVector.map { (fieldName, vector) ->
-            AnnSearchReq.builder()
-                .vectorFieldName(fieldName)
-                .vectors(listOf(FloatVec(vector)))
-                .params("{\"nprobe\": 10}")
-                .topK(topK)
-                .build()
-        }
+        try {
+            val epsilon = 1e-6f
 
-        val hybridReq = HybridSearchReq.builder()
-            .collectionName(COLLECTION_NAME)
-            .searchRequests(searchRequests)
-            .ranker(RRFRanker(20))
-            .topK(topK)
-            .consistencyLevel(ConsistencyLevel.BOUNDED)
-            .outFields(OUTPUT_FIELDS)
-            .build()
+            val searchResultsPerField = fieldToVector.map { (fieldName, vector) ->
+                async {
+                    val vectorData = listOf(FloatVec(vector))
+                    val searchParams = mapOf(
+                        "nprobe" to 10,
+                        "metric_type" to "L2"
+                    )
 
-        val entityListDeferred = async {
-            try {
-                val searchResp = milvusClient.hybridSearch(hybridReq)
-                val searchResult = searchResp.searchResults.first()
-                val entityList = searchResult.map { Embedding.fromMap(it.entity) }
+                    val searchReq = SearchReq.builder()
+                        .collectionName(COLLECTION_NAME)
+                        .annsField(fieldName)
+                        .data(vectorData)
+                        .topK(topK * 3)
+                        .outputFields(listOf("id"))
+                        .searchParams(searchParams)
+                        .build()
 
-                entityList
-            } catch (e: MilvusClientException) {
-                logger.error("Failed to perform hybridSearch on Milvus: ${e.message}", e)
-                throw DataAccessException.milvusAccessUnavailable()
+                    val searchResp = milvusClient.search(searchReq)
+                    val searchResult = searchResp.searchResults.first()
+
+                    searchResult.associate { embeddingEntity ->
+                        val id = embeddingEntity.entity["id"] as String
+                        val l2Distance = embeddingEntity.score as Float
+                        val similarity = 1f / (l2Distance + epsilon)
+                        id to similarity
+                    } to fieldName
+                }
+            }.awaitAll()
+
+            val idToScoreMap = mutableMapOf<String, Float>()
+
+            for ((fieldResult, fieldName) in searchResultsPerField) {
+                val weight = fieldToWeight[fieldName] ?: 1.0f
+
+                for ((id, similarity) in fieldResult) {
+                    val weightedScore = similarity * weight
+                    idToScoreMap[id] = idToScoreMap.getOrDefault(id, 0f) + weightedScore
+                }
             }
-        }
 
-        entityListDeferred.await()
+            val topIds = idToScoreMap.entries
+                .sortedByDescending { it.value }
+                .take(topK)
+                .map { it.key }
+
+            val topEmbeddings = get(topIds)
+
+            logger.debug("Custom hybridSearch returned ${topEmbeddings.size} results")
+            topEmbeddings
+        } catch (e: Exception) {
+            logger.error("Failed to perform custom hybridSearch on Milvus: ${e.message}", e)
+            throw DataAccessException.milvusAccessUnavailable()
+        }
     }
 
     override suspend fun insert(
