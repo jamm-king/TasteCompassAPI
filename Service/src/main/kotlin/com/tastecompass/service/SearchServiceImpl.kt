@@ -14,36 +14,56 @@ class SearchServiceImpl(
     private val embeddingService: EmbeddingService,
     private val dataService: DataService<Restaurant>
 ) : SearchService {
-    override suspend fun search(query: String, topK: Int): List<Restaurant> {
-        logger.debug("SearchService.search() called – query='{}', topK={}", query, topK)
+
+    override suspend fun search(
+        query: String,
+        topK: Int,
+        tasteWeight: Float,
+        categoryWeight: Float,
+        moodWeight: Float
+    ): List<Restaurant> {
+        logger.debug(
+            "SearchService.search() called – query='{}', topK={}, tasteWeight={}, categoryWeight={}, moodWeight={}",
+            query, topK, tasteWeight, categoryWeight, moodWeight
+        )
 
         return try {
             val analysisResult = analyzerService.analyze(query)
             logger.debug(
-                "Query analysis completed – mood='{}', taste='{}'",
+                "Query analysis completed – mood='{}', taste='{}', category='{}'",
                 analysisResult.mood,
-                analysisResult.taste
+                analysisResult.taste,
+                analysisResult.category
             )
 
             val embeddingReq = EmbeddingRequest(
                 mood = analysisResult.mood.orEmpty(),
-                taste = analysisResult.taste.orEmpty()
+                taste = analysisResult.taste.orEmpty(),
+                category = analysisResult.category.orEmpty()
             )
 
             val embeddingResult = embeddingService.embed(embeddingReq)
             logger.debug(
-                "Embedding generated – tasteVector size={}, moodVector size={}",
+                "Embedding generated – tasteVector size={}, moodVector size={}, categoryVector size={}",
                 embeddingResult.tasteVector.size,
-                embeddingResult.moodVector.size
+                embeddingResult.moodVector.size,
+                embeddingResult.categoryVector.size
             )
 
             val fieldToVector: Map<String, List<Float>> = mapOf(
-                "tasteVector" to embeddingResult.tasteVector,
-                "moodVector"  to embeddingResult.moodVector
+                "tasteVector"    to embeddingResult.tasteVector,
+                "moodVector"     to embeddingResult.moodVector,
+                "categoryVector" to embeddingResult.categoryVector
+            )
+
+            val fieldToWeight: Map<String, Float> = mapOf(
+                "tasteVector"    to tasteWeight,
+                "categoryVector" to categoryWeight,
+                "moodVector"     to moodWeight
             )
 
             val searchResults: List<Restaurant> =
-                dataService.hybridSearch(fieldToVector, topK)
+                dataService.hybridSearch(fieldToVector, fieldToWeight, topK)
             logger.debug("Hybrid search returned {} results", searchResults.size)
 
             searchResults
