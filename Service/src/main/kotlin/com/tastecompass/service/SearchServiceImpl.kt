@@ -1,5 +1,6 @@
 package com.tastecompass.service
 
+import com.tastecompass.analyzer.dto.QueryAnalysisResult
 import com.tastecompass.analyzer.service.AnalyzerService
 import com.tastecompass.data.service.DataService
 import com.tastecompass.domain.entity.Restaurant
@@ -56,10 +57,12 @@ class SearchServiceImpl(
                 "categoryVector" to embeddingResult.categoryVector
             )
 
+            val autoFieldToWeight = determineFieldWeights(analysisResult)
+
             val fieldToWeight: Map<String, Float> = mapOf(
-                "tasteVector"    to tasteWeight,
-                "categoryVector" to categoryWeight,
-                "moodVector"     to moodWeight
+                "tasteVector"    to resolveWeight(tasteWeight, autoFieldToWeight["tasteVector"]!!),
+                "categoryVector" to resolveWeight(categoryWeight, autoFieldToWeight["categoryVector"]!!),
+                "moodVector"     to resolveWeight(moodWeight, autoFieldToWeight["moodVector"]!!)
             )
 
             val searchResults: List<Restaurant> =
@@ -72,6 +75,65 @@ class SearchServiceImpl(
             emptyList()
         }
     }
+
+    fun determineFieldWeights(analysisResult: QueryAnalysisResult): Map<String, Float> {
+        val baseWeights = mutableMapOf(
+            "tasteVector" to 1.0f,
+            "categoryVector" to 1.0f,
+            "moodVector" to 1.0f
+        )
+
+        // Category weight scaling
+        if (!analysisResult.category.isNullOrBlank() && analysisResult.categoryConfidence != null) {
+            // Boost more if confidence high
+            val categoryBoost = when {
+                analysisResult.categoryConfidence >= 0.9f -> 3.0f
+                analysisResult.categoryConfidence >= 0.7f -> 2.5f
+                analysisResult.categoryConfidence >= 0.5f -> 2.0f
+                else -> 1.0f // Low confidence → no boost
+            }
+            baseWeights["categoryVector"] = categoryBoost
+        }
+
+        // Mood weight scaling
+        if (!analysisResult.mood.isNullOrBlank() && analysisResult.moodConfidence != null) {
+            val moodBoost = when {
+                analysisResult.moodConfidence >= 0.9f -> 2.0f
+                analysisResult.moodConfidence >= 0.7f -> 1.8f
+                analysisResult.moodConfidence >= 0.5f -> 1.5f
+                else -> 1.0f
+            }
+            baseWeights["moodVector"] = moodBoost
+        }
+
+        // Taste weight scaling
+        if (!analysisResult.taste.isNullOrBlank() && analysisResult.tasteConfidence != null) {
+            val tasteBoost = when {
+                analysisResult.tasteConfidence >= 0.9f -> 2.0f
+                analysisResult.tasteConfidence >= 0.7f -> 1.8f
+                analysisResult.tasteConfidence >= 0.5f -> 1.5f
+                else -> 1.0f
+            }
+            baseWeights["tasteVector"] = tasteBoost
+        }
+
+        // Optional: normalize total sum to 3.0 for stability
+        val sumWeights = baseWeights.values.sum()
+        val normalizedWeights = baseWeights.mapValues { (_, value) ->
+            value * (3.0f / sumWeights)
+        }
+
+        logger.debug("Auto-determined field weights (confidence-based): {}", normalizedWeights)
+
+        return normalizedWeights
+    }
+
+
+
+    private fun resolveWeight(manualWeight: Float, autoWeight: Float): Float {
+        return if (manualWeight != 1.0f) manualWeight else autoWeight
+    }
+
 
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
