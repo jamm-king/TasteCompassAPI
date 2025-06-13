@@ -76,64 +76,93 @@ class SearchServiceImpl(
         }
     }
 
-    fun determineFieldWeights(analysisResult: QueryAnalysisResult): Map<String, Float> {
+    private fun determineFieldWeights(analysisResult: QueryAnalysisResult): Map<String, Float> {
+        val intent = mapIntent(analysisResult.intent)
+        val maxWeights = getMaxWeightsForIntent(intent)
+
         val baseWeights = mutableMapOf(
             "tasteVector" to 1.0f,
             "categoryVector" to 1.0f,
             "moodVector" to 1.0f
         )
 
-        // Category weight scaling
-        if (!analysisResult.category.isNullOrBlank() && analysisResult.categoryConfidence != null) {
-            // Boost more if confidence high
-            val categoryBoost = when {
-                analysisResult.categoryConfidence >= 0.9f -> 3.0f
-                analysisResult.categoryConfidence >= 0.7f -> 2.5f
-                analysisResult.categoryConfidence >= 0.5f -> 2.0f
-                else -> 1.0f // Low confidence → no boost
-            }
-            baseWeights["categoryVector"] = categoryBoost
+        val category = analysisResult.category
+        val mood = analysisResult.mood
+        val taste = analysisResult.taste
+
+        // Category
+        if (!category.isNullOrBlank() && analysisResult.categoryConfidence != null) {
+            val categoryWeight = scaleWeight(analysisResult.categoryConfidence, minWeight = 1.0f, maxWeight = maxWeights["categoryVector"]!!)
+            baseWeights["categoryVector"] = categoryWeight
         }
 
-        // Mood weight scaling
-        if (!analysisResult.mood.isNullOrBlank() && analysisResult.moodConfidence != null) {
-            val moodBoost = when {
-                analysisResult.moodConfidence >= 0.9f -> 2.0f
-                analysisResult.moodConfidence >= 0.7f -> 1.8f
-                analysisResult.moodConfidence >= 0.5f -> 1.5f
-                else -> 1.0f
-            }
-            baseWeights["moodVector"] = moodBoost
+        // Mood
+        if (!mood.isNullOrBlank() && analysisResult.moodConfidence != null) {
+            val moodWeight = scaleWeight(analysisResult.moodConfidence, minWeight = 1.0f, maxWeight = maxWeights["moodVector"]!!)
+            baseWeights["moodVector"] = moodWeight
         }
 
-        // Taste weight scaling
-        if (!analysisResult.taste.isNullOrBlank() && analysisResult.tasteConfidence != null) {
-            val tasteBoost = when {
-                analysisResult.tasteConfidence >= 0.9f -> 2.0f
-                analysisResult.tasteConfidence >= 0.7f -> 1.8f
-                analysisResult.tasteConfidence >= 0.5f -> 1.5f
-                else -> 1.0f
-            }
-            baseWeights["tasteVector"] = tasteBoost
+        // Taste
+        if (!taste.isNullOrBlank() && analysisResult.tasteConfidence != null) {
+            val tasteWeight = scaleWeight(analysisResult.tasteConfidence, minWeight = 1.0f, maxWeight = maxWeights["tasteVector"]!!)
+            baseWeights["tasteVector"] = tasteWeight
         }
 
-        // Optional: normalize total sum to 3.0 for stability
+        // Normalize weights (sum ≈ 3.0)
         val sumWeights = baseWeights.values.sum()
         val normalizedWeights = baseWeights.mapValues { (_, value) ->
             value * (3.0f / sumWeights)
         }
 
-        logger.debug("Auto-determined field weights (confidence-based): {}", normalizedWeights)
+        logger.debug("Intent = {}, field weights = {}", intent, normalizedWeights)
 
         return normalizedWeights
     }
-
-
 
     private fun resolveWeight(manualWeight: Float, autoWeight: Float): Float {
         return if (manualWeight != 1.0f) manualWeight else autoWeight
     }
 
+    private fun scaleWeight(confidence: Float?, minWeight: Float, maxWeight: Float): Float {
+        if (confidence == null || confidence <= 0f) return minWeight
+        if (confidence >= 1f) return maxWeight
+
+        return minWeight + (maxWeight - minWeight) * confidence
+    }
+
+    fun getMaxWeightsForIntent(intent: SearchIntent): Map<String, Float> {
+        return when (intent) {
+            SearchIntent.CATEGORY_FOCUSED -> mapOf(
+                "categoryVector" to 3.5f,
+                "moodVector" to 2.0f,
+                "tasteVector" to 1.5f
+            )
+            SearchIntent.MOOD_FOCUSED -> mapOf(
+                "categoryVector" to 2.5f,
+                "moodVector" to 3.0f,
+                "tasteVector" to 1.5f
+            )
+            SearchIntent.TASTE_FOCUSED -> mapOf(
+                "categoryVector" to 2.5f,
+                "moodVector" to 2.0f,
+                "tasteVector" to 2.5f
+            )
+            SearchIntent.GENERIC -> mapOf(
+                "categoryVector" to 3.0f,
+                "moodVector" to 2.0f,
+                "tasteVector" to 1.5f
+            )
+        }
+    }
+
+    private fun mapIntent(intentStr: String?): SearchIntent {
+        return when (intentStr) {
+            "CATEGORY_FOCUSED" -> SearchIntent.CATEGORY_FOCUSED
+            "MOOD_FOCUSED" -> SearchIntent.MOOD_FOCUSED
+            "TASTE_FOCUSED" -> SearchIntent.TASTE_FOCUSED
+            else -> SearchIntent.GENERIC
+        }
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
