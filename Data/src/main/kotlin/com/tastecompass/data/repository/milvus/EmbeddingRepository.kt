@@ -58,14 +58,11 @@ class EmbeddingRepository(
         topK: Int
     ): List<Embedding> = coroutineScope {
         try {
-            val epsilon = 1e-6f
-
             val searchResultsPerField = fieldToVector.map { (fieldName, vector) ->
                 async {
                     val vectorData = listOf(FloatVec(vector))
                     val searchParams = mapOf(
-                        "nprobe" to 10,
-                        "metric_type" to "L2"
+                        "metric_type" to "COSINE"
                     )
 
                     val searchReq = SearchReq.builder()
@@ -82,8 +79,7 @@ class EmbeddingRepository(
 
                     searchResult.associate { embeddingEntity ->
                         val id = embeddingEntity.entity["id"] as String
-                        val l2Distance = embeddingEntity.score as Float
-                        val similarity = 1f / (l2Distance + epsilon)
+                        val similarity = embeddingEntity.score as Float
                         id to similarity
                     } to fieldName
                 }
