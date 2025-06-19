@@ -1,11 +1,14 @@
 package com.tastecompass.service
 
+import com.google.gson.Gson
 import com.tastecompass.analyzer.dto.QueryAnalysisResult
 import com.tastecompass.analyzer.service.AnalyzerService
 import com.tastecompass.data.service.DataService
 import com.tastecompass.domain.entity.Restaurant
 import com.tastecompass.embedding.dto.EmbeddingRequest
+import com.tastecompass.embedding.dto.EmbeddingResult
 import com.tastecompass.embedding.service.EmbeddingService
+import com.tastecompass.redis.client.RedisClientWrapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
@@ -13,8 +16,11 @@ import org.springframework.stereotype.Service
 class SearchServiceImpl(
     private val analyzerService: AnalyzerService,
     private val embeddingService: EmbeddingService,
-    private val dataService: DataService<Restaurant>
+    private val dataService: DataService<Restaurant>,
+    private val redis: RedisClientWrapper
 ) : SearchService {
+
+    private val gson = Gson()
 
     override suspend fun search(
         query: String,
@@ -29,27 +35,26 @@ class SearchServiceImpl(
         )
 
         return try {
-            val analysisResult = analyzerService.analyze(query)
-            logger.debug(
-                "Query analysis completed – mood='{}', taste='{}', category='{}'",
-                analysisResult.mood,
-                analysisResult.taste,
-                analysisResult.category
-            )
+            val analysisKey = CacheKeyGenerator.analysisKey(query)
+            val analysisJson = redis.getOrSet(analysisKey, TTL_SECONDS) {
+                val analysis = analyzerService.analyze(query)
+                gson.toJson(analysis)
+            }
+            val analysisResult = gson.fromJson(analysisJson, QueryAnalysisResult::class.java)
 
-            val embeddingReq = EmbeddingRequest(
-                mood = analysisResult.mood.orEmpty(),
-                taste = analysisResult.taste.orEmpty(),
-                category = analysisResult.category.orEmpty()
-            )
+            val embeddingKey = CacheKeyGenerator.embeddingKey(query)
+            val embeddingJson = redis.getOrSet(embeddingKey, TTL_SECONDS) {
+                val req = EmbeddingRequest(
+                    mood = analysisResult.mood.orEmpty(),
+                    taste = analysisResult.taste.orEmpty(),
+                    category = analysisResult.category.orEmpty()
+                )
+                val result = embeddingService.embed(req)
+                gson.toJson(result)
+            }
+            val embeddingResult = gson.fromJson(embeddingJson, EmbeddingResult::class.java)
 
-            val embeddingResult = embeddingService.embed(embeddingReq)
-            logger.debug(
-                "Embedding generated – tasteVector size={}, moodVector size={}, categoryVector size={}",
-                embeddingResult.tasteVector.size,
-                embeddingResult.moodVector.size,
-                embeddingResult.categoryVector.size
-            )
+            logger.debug("Analysis/Embedding ready – proceeding to search")
 
             val fieldToVector: Map<String, List<Float>> = mapOf(
                 "tasteVector"    to embeddingResult.tasteVector,
@@ -73,6 +78,18 @@ class SearchServiceImpl(
         } catch (e: Exception) {
             logger.error("Exception in SearchService.search: {}", e.message, e)
             emptyList()
+        }
+    }
+
+    suspend fun RedisClientWrapper.getOrSet(
+        key: String,
+        ttlSeconds: Long,
+        fetch: suspend () -> String
+    ): String {
+        return this.get(key) ?: run {
+            val value = fetch()
+            this.set(key, value, ttlSeconds)
+            value
         }
     }
 
@@ -166,5 +183,6 @@ class SearchServiceImpl(
 
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
+        private const val TTL_SECONDS = 300L
     }
 }
