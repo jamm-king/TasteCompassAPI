@@ -44,3 +44,4 @@ out/
 **/milvus.properties
 **/mongo.properties
 **/kakao.properties
+**/redis.properties
