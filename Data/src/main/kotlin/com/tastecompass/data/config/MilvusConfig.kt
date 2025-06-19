@@ -112,7 +112,7 @@ open class MilvusConfig (
                     val indexParam = IndexParam.builder()
                         .fieldName(fieldName)
                         .indexType(IndexParam.IndexType.AUTOINDEX)
-                        .metricType(IndexParam.MetricType.L2)
+                        .metricType(IndexParam.MetricType.COSINE)
                         .build()
                     client.createIndex(
                         CreateIndexReq.builder()
