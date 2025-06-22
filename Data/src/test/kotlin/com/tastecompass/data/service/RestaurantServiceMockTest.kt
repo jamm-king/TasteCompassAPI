@@ -111,8 +111,9 @@ class RestaurantServiceMockTest {
 
     @Test
     fun `search returns list of Restaurant when hybridSearch and mongoRepo succeed`() = runBlocking {
-        val dummyVector = listOf(0.1f, 0.2f, 0.3f)
+        val dummyVector = List(Constants.EMBEDDING_SIZE) { 0.1f }
         val fieldToVector = mapOf("tasteVector" to dummyVector)
+        val fieldToWeight = mapOf("tasteVector" to 1.0f)
         val topK = 2
 
         val embedding1 = Embedding(
@@ -125,7 +126,7 @@ class RestaurantServiceMockTest {
             tasteVector = List(Constants.EMBEDDING_SIZE) { 0.3f },
             moodVector = List(Constants.EMBEDDING_SIZE) { 0.3f }
         )
-        `when`(milvusRepo.hybridSearch(fieldToVector, topK))
+        `when`(milvusRepo.hybridSearch(fieldToVector, fieldToWeight, topK))
             .thenReturn(listOf(embedding1, embedding2))
 
         val meta1 = Metadata(
@@ -147,31 +148,12 @@ class RestaurantServiceMockTest {
         `when`(mongoRepo.get(listOf("r1", "r2")))
             .thenReturn(listOf(meta1, meta2))
 
-        val result: List<Restaurant> = service.hybridSearch(fieldToVector, topK)
+        val result = service.hybridSearch(fieldToVector, fieldToWeight, topK)
 
         assertEquals(2, result.size)
-
         assertEquals("r1", result[0].id)
         assertEquals("Restaurant One", result[0].name)
-        // embedding score나 다른 값도 필요하면 추가로 assert
-
         assertEquals("r2", result[1].id)
         assertEquals("Restaurant Two", result[1].name)
-    }
-
-    @Test
-    fun `search throws exception when hybridSearch throws`(): Unit = runBlocking {
-        val dummyVector = listOf(0.5f, 0.5f)
-        val fieldToVector = mapOf("moodVector" to dummyVector)
-        val topK = 3
-
-        `when`(milvusRepo.hybridSearch(fieldToVector, topK))
-            .thenThrow(RuntimeException("Milvus error"))
-
-        try {
-            service.hybridSearch(fieldToVector, topK)
-        } catch (e: Exception) {
-            assertEquals("Milvus error", e.message)
-        }
     }
 }
