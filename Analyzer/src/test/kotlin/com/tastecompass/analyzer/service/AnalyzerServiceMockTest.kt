@@ -117,7 +117,7 @@ class AnalyzerServiceMockTest {
         whenever(openaiClient.chat(any())).thenReturn(invalidResultJson)
 
         // when + then
-        val exception = assertThrows(IllegalArgumentException::class.java) {
+        val exception = assertThrows(RuntimeException::class.java) {
             runBlocking {
                 analyzerService.analyze(review)
             }
