@@ -143,8 +143,6 @@ class RestaurantServiceIntegrativeTest {
             moodVector = List(Constants.EMBEDDING_SIZE) { 0.1f },
             tasteVector = List(Constants.EMBEDDING_SIZE) { 1.0f }
         )
-        val restaurant1 = Restaurant.create(metadata1, embedding1)
-
         val metadata2 = Metadata(
             id = testId2,
             status = AnalyzeStep.EMBEDDED,
@@ -156,13 +154,12 @@ class RestaurantServiceIntegrativeTest {
             moodVector = List(Constants.EMBEDDING_SIZE) { 1.0f },
             tasteVector = List(Constants.EMBEDDING_SIZE) { 0.1f }
         )
-        val restaurant2 = Restaurant.create(metadata2, embedding2)
 
-        dataService.save(restaurant1)
-        dataService.save(restaurant2)
+        dataService.save(Restaurant.create(metadata1, embedding1))
+        dataService.save(Restaurant.create(metadata2, embedding2))
         insertedIds.addAll(listOf(testId1, testId2))
 
-        Thread.sleep(1000)
+        delay(1000)
 
         val queryMood = List(Constants.EMBEDDING_SIZE) { 1.0f }
         val queryTaste = List(Constants.EMBEDDING_SIZE) { 1.0f }
@@ -170,17 +167,23 @@ class RestaurantServiceIntegrativeTest {
             "moodVector" to queryMood,
             "tasteVector" to queryTaste
         )
-        val result: List<Restaurant> = dataService.hybridSearch(
+        val fieldToWeight = mapOf(
+            "moodVector" to 0.5f,
+            "tasteVector" to 0.5f
+        )
+
+        val result = dataService.hybridSearch(
             fieldToVector = fieldToVector,
+            fieldToWeight = fieldToWeight,
             topK = 2
         )
-        Thread.sleep(1000)
+
+        delay(1000)
 
         assertEquals(2, result.size)
         val returnedIds = result.map { it.id }.toSet()
         assertTrue(returnedIds.containsAll(listOf(testId1, testId2)))
     }
-
 
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.simpleName)
